@@ -2,6 +2,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+
+#include "sht_file.h"
 #include "bf.h"
 #include "hash_file.h"
 
@@ -63,4 +65,8 @@ const char* cities[] = {
 
 int main() {
 
+  printf("SHT Main\n");
+  SHT_Init();
+
+  return 0;
 }

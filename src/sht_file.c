@@ -31,10 +31,57 @@ typedef struct Record {
 	char city[20];
 } Record;
 
+
+
 typedef struct{
-char index-key[20];
+char index_key[20];
 int tupleId;  /*Ακέραιος που προσδιορίζει το block και τη θέση μέσα στο block στην οποία     έγινε η εισαγωγή της εγγραφής στο πρωτεύον ευρετήριο.*/ 
 }SecondaryRecord;
+
+#endif // HASH_FILE_H
+
+typedef struct
+{
+  int fd;
+  int used;
+} SecIndexNode;
+
+
+typedef struct
+{
+  int size;
+  int local_depth;
+} SecHeader;
+
+typedef struct 
+{
+  SecHeader secHeader;
+  SecondaryRecord secRecord[(BF_BLOCK_SIZE - sizeof(SecHeader)) / sizeof(SecondaryRecord)];
+} SecEntry;
+
+
+typedef struct
+{
+  int size;
+} SecHashHeader;
+
+typedef struct
+{
+  int h_value;
+  int block_num;
+} SecHashNode;
+
+typedef struct
+{
+  SecHashHeader secHeader;
+  SecHashNode secHashNode[(BF_BLOCK_SIZE - sizeof(SecHashHeader)) / sizeof(SecHashNode)];
+
+} SecHashEntry;
+
+SecIndexNode secIndex[MAX_OPEN_FILES];  // πινακας μεα τα ανοικτα αρχεια δευτερευοντος ευρετηριου
+
+UpdateRecordArray updateArray[((BF_BLOCK_SIZE - sizeof(SecHeader)) / sizeof(SecondaryRecord)) + 1];
+
 
 
 
@@ -68,7 +115,7 @@ HT_ErrorCode SHT_SecondaryUpdateEntry (int indexDesc, UpdateRecordArray *updateA
   return HT_OK;
 }
 
-HT_ErrorCode SHT_PrintAllEntries(int sindexDesc, char *index-key ) {
+HT_ErrorCode SHT_PrintAllEntries(int sindexDesc, char *index_key ) {
   //insert code here
   return HT_OK;
 }
@@ -78,10 +125,9 @@ HT_ErrorCode SHT_HashStatistics(char *filename ) {
   return HT_OK;
 }
 
-HT_ErrorCode SHT_InnerJoin(int sindexDesc1, int sindexDesc2,  char *index-key ) {
+HT_ErrorCode SHT_InnerJoin(int sindexDesc1, int sindexDesc2,  char *index_key ) {
   //insert code here
   return HT_OK;
 }
 
 
-#endif // HASH_FILE_H
