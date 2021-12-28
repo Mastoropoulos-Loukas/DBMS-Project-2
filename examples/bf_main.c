@@ -7,13 +7,15 @@
 #define CALL_OR_DIE(call)     \
   {                           \
     BF_ErrorCode code = call; \
-    if (code != BF_OK) {      \
+    if (code != BF_OK)        \
+    {                         \
       BF_PrintError(code);    \
       exit(code);             \
     }                         \
   }
 
-int main() {
+int main()
+{
   int fd1;
   BF_Block *block;
   BF_Block_Init(&block);
@@ -22,16 +24,17 @@ int main() {
   CALL_OR_DIE(BF_CreateFile("data1.db"))
   CALL_OR_DIE(BF_OpenFile("data1.db", &fd1));
 
-
-  char* data;
-  for (int i = 0; i < 1000; ++i) {
+  char *data;
+  for (int i = 0; i < 1000; ++i)
+  {
     CALL_OR_DIE(BF_AllocateBlock(fd1, block));
     data = BF_Block_GetData(block);
     memset(data, i % 127, BF_BUFFER_SIZE);
     BF_Block_SetDirty(block);
     CALL_OR_DIE(BF_UnpinBlock(block));
   }
-  for (int i = 0; i < 1000; ++i) {
+  for (int i = 0; i < 1000; ++i)
+  {
     CALL_OR_DIE(BF_GetBlock(fd1, i, block));
     data = BF_Block_GetData(block);
     printf("block = %d and data = %d\n", i, data[0]);
@@ -46,7 +49,8 @@ int main() {
   int blocks_num;
   CALL_OR_DIE(BF_GetBlockCounter(fd1, &blocks_num));
 
-  for (int i = 0; i < blocks_num; ++i) {
+  for (int i = 0; i < blocks_num; ++i)
+  {
     CALL_OR_DIE(BF_GetBlock(fd1, i, block));
     data = BF_Block_GetData(block);
     printf("block = %d and data = %d\n", i, data[i % BF_BUFFER_SIZE]);
@@ -57,4 +61,3 @@ int main() {
   CALL_OR_DIE(BF_CloseFile(fd1));
   CALL_OR_DIE(BF_Close());
 }
-
