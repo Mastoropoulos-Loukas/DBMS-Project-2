@@ -11,7 +11,7 @@
   BF_ErrorCode code = call; \
   if (code != BF_OK) {         \
     BF_PrintError(code);    \
-    return HP_ERROR;        \
+    return HT_ERROR;        \
   }                         \
 }
 
@@ -81,6 +81,8 @@ typedef struct
 SecIndexNode secIndex[MAX_OPEN_FILES];  // πινακας μεα τα ανοικτα αρχεια δευτερευοντος ευρετηριου
 
 UpdateRecordArray updateArray[((BF_BLOCK_SIZE - sizeof(SecHeader)) / sizeof(SecondaryRecord)) + 1];
+
+int max_secNodes;     //max_secNodes = BF_BLOCK_SIZE / sizeof(secHashNode)
 
 
 
