@@ -5,7 +5,6 @@
 
 #include "bf.h"
 #include "hash_file.h"
-#define MAX_OPEN_FILES 20
 
 #define CALL_BF(call)         \
   {                           \
@@ -46,16 +45,8 @@ typedef struct
   HashNode hashNode[(BF_BLOCK_SIZE - sizeof(HashHeader)) / sizeof(HashNode)];
 } HashEntry;
 
-typedef struct
-{
-  int fd;
-  int used;
-} IndexNode;
-
 int max_records;
 int max_hNodes;
-
-IndexNode indexArray[MAX_OPEN_FILES];
 
 void printRecord(Record record)
 {
@@ -129,6 +120,7 @@ HT_ErrorCode HT_CreateIndex(const char *filename, int depth)
   int id;
   HT_OpenIndex(filename, &id);
   int fd = indexArray[id].fd;
+  strcpy(indexArray[id].filename, filename);
 
   HashEntry hashEntry;
   int hashN = pow(2.0, (double)depth);
