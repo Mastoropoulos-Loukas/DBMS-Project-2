@@ -129,9 +129,7 @@ HT_ErrorCode SHT_CreateSecondaryIndex(const char *sfileName, char *attrName, int
   for (int i = 0; i < hashN; i++)
     secHashEntry.hashNode[i].value = i;
   // create first block for info
-  printf("sfd=%d\n", sfd);
   CALL_BF(BF_AllocateBlock(sfd, block));
-  printf("YOOO\n");
   char *data = BF_Block_GetData(block);
   memcpy(data, &depth, sizeof(int));
   BF_Block_SetDirty(block);

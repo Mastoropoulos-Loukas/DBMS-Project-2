@@ -62,6 +62,8 @@ const char *cities[] = {
 
 int main()
 {
+  BF_Init(LRU);
+
   CALL_OR_DIE(SHT_Init());
   int indexDesc;
   CALL_OR_DIE(SHT_CreateSecondaryIndex(FILE_NAME, "surnames", strlen("surnames"), GLOBAL_DEPT, "primary.db"));
