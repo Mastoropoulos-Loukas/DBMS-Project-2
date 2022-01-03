@@ -1,0 +1,5 @@
+1. Μεταφέραμε τα structs του Νίκου. 
+2. Μεταφέραμε το IndexNode και το indexArray στο hash_file.h για να το βλέπει και το sht_file.c.
+3. Προσθέσαμε στο IndexNode το πεδίο filename που κρατάει το όνομα του αρχείου. Το μέγεθος του πεδίου γίνεται defined σε 30.
+4. Στην SHT_CreateSecondaryIndex βάλαμε έλεγχο για την ύπαρξη του αρχείου πρωτεύοντος ευρετηρίου που δίνεται από την παράμετρο char *fileName.
+5. Προσθέθηκε στο SecHashHeader το πεδίο attribute (cities or surnames).
