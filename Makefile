@@ -13,3 +13,4 @@ bf:
 clean:
 	@echo " Removing runner.exe and all .db files ..."
 	rm *.db ./build/runner
+
