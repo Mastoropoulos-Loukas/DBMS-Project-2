@@ -5,6 +5,7 @@
 
 #include "bf.h"
 #include "sht_file.h"
+#include "hash_file.h"
 
 #define CALL_BF(call)         \
   {                           \
@@ -79,8 +80,6 @@ typedef struct
 } SecHashEntry;
 
 SecIndexNode secIndexArray[MAX_OPEN_FILES]; // πινακας μεα τα ανοικτα αρχεια δευτερευοντος ευρετηριου
-
-UpdateRecordArray updateArray[((BF_BLOCK_SIZE - sizeof(SecHeader)) / sizeof(SecondaryRecord)) + 1];
 
 int max_secNodes; // max_secNodes = BF_BLOCK_SIZE / sizeof(secHashNode)
 

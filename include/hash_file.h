@@ -4,6 +4,19 @@
 #define MAX_OPEN_FILES 20
 #define MAX_NAME_LEN 30
 
+typedef int tid;
+
+tid getTid(int, int);
+
+typedef struct
+{ //μπορειτε να αλλαξετε τη δομη συμφωνα  με τις ανάγκες σας
+	char surname[20];
+	char city[20];
+	int oldTupleId; // η παλια θέση της εγγραφής πριν την εισαγωγή της νέας
+	int newTupleId; // η νέα θέση της εγγραφής που μετακινήθηκε μετα την εισαγωγή της νέας εγγραφής
+
+} UpdateRecordArray;
+
 typedef struct
 {
 	int fd;
@@ -12,6 +25,12 @@ typedef struct
 } IndexNode;
 
 IndexNode indexArray[MAX_OPEN_FILES];
+
+typedef struct
+{
+  int size;
+  int local_depth;
+} DataHeader;
 
 typedef enum HT_ErrorCode
 {
@@ -26,6 +45,14 @@ typedef struct Record
 	char surname[20];
 	char city[20];
 } Record;
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+#define MAX_RECORDS ((BF_BLOCK_SIZE - sizeof(DataHeader)) / sizeof(Record))
+
+void printUpdateArray(UpdateRecordArray * array, int size);
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 /*
  * Η συνάρτηση HT_Init χρησιμοποιείται για την αρχικοποίηση κάποιον δομών που μπορεί να χρειαστείτε.
@@ -67,7 +94,9 @@ HT_ErrorCode HT_CloseFile(
  */
 HT_ErrorCode HT_InsertEntry(
 	int indexDesc, /* θέση στον πίνακα με τα ανοιχτά αρχεία */
-	Record record  /* δομή που προσδιορίζει την εγγραφή */
+	Record record,  /* δομή που προσδιορίζει την εγγραφή */
+	tid* tupleId,	/* το tuple id της καινούργιας εγγραφής*/
+	UpdateRecordArray* updateArray /* πίνακας με τις αλλαγές */
 );
 
 /*

@@ -5,6 +5,7 @@
 
 #include "bf.h"
 #include "hash_file.h"
+#include "sht_file.h"
 
 #define CALL_BF(call)         \
   {                           \
@@ -16,11 +17,6 @@
     }                         \
   }
 
-typedef struct
-{
-  int size;
-  int local_depth;
-} DataHeader;
 
 typedef struct
 {
@@ -47,6 +43,17 @@ typedef struct
 
 int max_records;
 int max_hNodes;
+
+tid getTid(int blockId, int index){
+  int num_of_rec_in_block = (BF_BLOCK_SIZE - sizeof(DataHeader)) / sizeof(Record);
+  tid temp = (blockId+1)*num_of_rec_in_block + index;
+  return temp;
+}
+
+void printUpdateArray(UpdateRecordArray *array, int size){
+    for(int i = 0; i < max_records; i++)printf("city: %s, surname: %s, oldTid: %i, newTid: %i\n",\
+    array[i].city, array[i].surname, array[i].oldTupleId, array[i].newTupleId);
+}
 
 void printRecord(Record record)
 {
@@ -219,7 +226,7 @@ HT_ErrorCode HT_CloseFile(int indexDesc)
   return HT_OK;
 }
 
-HT_ErrorCode HT_InsertEntry(int indexDesc, Record record)
+HT_ErrorCode HT_InsertEntry(int indexDesc, Record record, tid* tupleId, UpdateRecordArray* updateArray)
 {
 
   Entry entry;
@@ -309,6 +316,7 @@ HT_ErrorCode HT_InsertEntry(int indexDesc, Record record)
 
       hashEntry = new;
     }
+    //local depth < depht , need to share 
     int dif = depth - local_depth;
     int numOfHashes = pow(2.0, (double)dif);
     int first;
@@ -345,24 +353,41 @@ HT_ErrorCode HT_InsertEntry(int indexDesc, Record record)
     {
       if (hashFunction(entry.record[i].id, depth) <= half)
       {
+        //reassign to new position in old block
         old.record[old.header.size] = entry.record[i];
-        old.header.size++;
+        
+        //update array
+        strcpy(updateArray[i].city, entry.record[i].city);
+        strcpy(updateArray[i].surname, entry.record[i].surname);
+        updateArray[i].oldTupleId = getTid(blockN, i);
+        updateArray[i].newTupleId = getTid(blockN, old.header.size);
+        
+        old.header.size++;  
       }
       else
       {
+        // assign to new block
         new.record[new.header.size] = entry.record[i];
+
+        //update array
+        strcpy(updateArray[i].city, entry.record[i].city);
+        strcpy(updateArray[i].surname, entry.record[i].surname);
+        updateArray[i].oldTupleId = getTid(blockN, i);
+        updateArray[i].newTupleId = getTid(blockNew, new.header.size);
+
         new.header.size++;
       }
     }
-
     if (hashFunction(record.id, depth) <= half)
     {
       old.record[old.header.size] = record;
+      *tupleId = getTid(blockN, old.header.size);
       old.header.size++;
     }
     else
     {
       new.record[new.header.size] = record;
+      *tupleId = getTid(blockNew, new.header.size);
       new.header.size++;
     }
 
@@ -379,7 +404,6 @@ HT_ErrorCode HT_InsertEntry(int indexDesc, Record record)
     memcpy(data, &new, sizeof(Entry));
     BF_Block_SetDirty(block);
     CALL_BF(BF_UnpinBlock(block));
-
     return HT_OK;
   }
 
@@ -390,6 +414,7 @@ HT_ErrorCode HT_InsertEntry(int indexDesc, Record record)
   if (new == 0)
     memcpy(&entry, data, sizeof(Entry));    // if space was previously allocated, get previous data
   entry.record[entry.header.size] = record; // add record
+  *tupleId  = getTid(blockN, entry.header.size);
   (entry.header.size)++;                    // update header size
 
   memcpy(data, &entry, sizeof(Entry));

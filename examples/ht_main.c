@@ -63,6 +63,8 @@ int main()
 {
   BF_Init(LRU);
 
+  UpdateRecordArray update[MAX_RECORDS];
+
   CALL_OR_DIE(HT_Init());
 
   int indexDesc;
@@ -75,6 +77,9 @@ int main()
   printf("Insert Entries\n");
   for (int id = 0; id < RECORDS_NUM; ++id)
   {
+    update[0].oldTupleId = 0; //simple way to know if update was made
+    tid tupleId;
+
     // create a record
     record.id = id;
     r = rand() % 12;
@@ -84,7 +89,15 @@ int main()
     r = rand() % 10;
     memcpy(record.city, cities[r], strlen(cities[r]) + 1);
 
-    CALL_OR_DIE(HT_InsertEntry(indexDesc, record));
+    CALL_OR_DIE(HT_InsertEntry(indexDesc, record, &tupleId, update));
+    
+    //if there was an update print it
+    if(update[0].oldTupleId != 0)
+    {
+      printf("\nPrinting update array: \n");
+      printUpdateArray(update, MAX_RECORDS);
+      printf("\n");
+    }
   }
 
   printf("RUN PrintAllEntries\n");

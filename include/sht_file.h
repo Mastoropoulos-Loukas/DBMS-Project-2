@@ -16,13 +16,7 @@ typedef struct Record
 	char city[20];
 } Record;
 
-#endif // HASH_FILE_H
-
-typedef struct
-{
-	char index_key[20];
-	int tupleId; /*Ακέραιος που προσδιορίζει το block και τη θέση μέσα στο block στην οποία     έγινε η εισαγωγή της εγγραφής στο πρωτεύον ευρετήριο.*/
-} SecondaryRecord;
+typedef int tid;
 
 typedef struct
 { //μπορειτε να αλλαξετε τη δομη συμφωνα  με τις ανάγκες σας
@@ -32,6 +26,20 @@ typedef struct
 	int newTupleId; // η νέα θέση της εγγραφής που μετακινήθηκε μετα την εισαγωγή της νέας εγγραφής
 
 } UpdateRecordArray;
+
+tid getTid(int, int);
+
+#endif // HASH_FILE_H
+
+// typedef int tid;
+
+typedef struct
+{
+	char index_key[20];
+	int tupleId; /*Ακέραιος που προσδιορίζει το block και τη θέση μέσα στο block στην οποία     έγινε η εισαγωγή της εγγραφής στο πρωτεύον ευρετήριο.*/
+} SecondaryRecord;
+
+//////////////////////////////////////////////////////////////////////////
 
 HT_ErrorCode SHT_Init();
 
