@@ -49,6 +49,17 @@ typedef struct Record
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 #define MAX_RECORDS ((BF_BLOCK_SIZE - sizeof(DataHeader)) / sizeof(Record))
+#define MAX_HNODES ((BF_BLOCK_SIZE - sizeof(HashHeader)) / sizeof(HashNode))
+
+#define CALL_OR_DIE(call)     \
+  {                           \
+    HT_ErrorCode code = call; \
+    if (code != HT_OK)        \
+    {                         \
+      printf("Error\n");      \
+      exit(code);             \
+    }                         \
+  }
 
 void printUpdateArray(UpdateRecordArray * array, int size);
 

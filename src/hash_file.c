@@ -26,7 +26,7 @@ typedef struct
 typedef struct
 {
   DataHeader header;
-  Record record[(BF_BLOCK_SIZE - sizeof(DataHeader)) / sizeof(Record)];
+  Record record[MAX_RECORDS];
 } Entry;
 
 typedef struct
@@ -38,11 +38,9 @@ typedef struct
 typedef struct
 {
   HashHeader header;
-  HashNode hashNode[(BF_BLOCK_SIZE - sizeof(HashHeader)) / sizeof(HashNode)];
+  HashNode hashNode[MAX_HNODES];
 } HashEntry;
 
-int max_records;
-int max_hNodes;
 
 tid getTid(int blockId, int index){
   int num_of_rec_in_block = (BF_BLOCK_SIZE - sizeof(DataHeader)) / sizeof(Record);
@@ -51,7 +49,7 @@ tid getTid(int blockId, int index){
 }
 
 void printUpdateArray(UpdateRecordArray *array, int size){
-    for(int i = 0; i < max_records; i++)printf("city: %s, surname: %s, oldTid: %i, newTid: %i\n",\
+    for(int i = 0; i < MAX_RECORDS; i++)printf("city: %s, surname: %s, oldTid: %i, newTid: %i\n",\
     array[i].city, array[i].surname, array[i].oldTupleId, array[i].newTupleId);
 }
 
@@ -82,48 +80,61 @@ unsigned int hashFunction(int id, int depth)
 
 HT_ErrorCode HT_Init()
 {
-
   if (MAX_OPEN_FILES <= 0)
   {
     printf("Runner.exe needs at least one file to run. Please ensure that MAX_OPEN_FILES is not 0\n");
     return HT_ERROR;
   }
-
   // CALL_BF(BF_Init(LRU));
   for (int i = 0; i < MAX_OPEN_FILES; i++)
+  {
     indexArray[i].used = 0;
-
-  max_records = (BF_BLOCK_SIZE - sizeof(DataHeader)) / sizeof(Record);
-  max_hNodes = BF_BLOCK_SIZE / sizeof(HashNode);
-
+  }
   return HT_OK;
 }
 
-HT_ErrorCode HT_CreateIndex(const char *filename, int depth)
+HT_ErrorCode checkCreateIndex(const char* file, int depth)
 {
-  if (filename == NULL || strcmp(filename, "") == 0)
+  if (file == NULL || strcmp(file, "") == 0)
   {
     printf("Please provide a name for the output file!\n");
     return HT_ERROR;
   }
-
   if (depth < 0)
   {
     printf("Depth input is wrong! Please give a NON-NEGATIVE number!\n");
     return HT_ERROR;
   }
+  return HT_OK;
+}
 
+HT_ErrorCode createInfoBlock(int fd, BF_Block *block, int depth)
+{
+  CALL_BF(BF_AllocateBlock(fd, block));
+  char *data = BF_Block_GetData(block);
+  memcpy(data, &depth, sizeof(int));
+  BF_Block_SetDirty(block);
+  CALL_BF(BF_UnpinBlock(block));
+  return HT_OK;
+}
+
+HT_ErrorCode HT_CreateIndex(const char *filename, int depth)
+{
+  CALL_OR_DIE(checkCreateIndex(filename, depth));
+  
   CALL_BF(BF_CreateFile(filename));
   printf("Name given : %s, max depth : %i\n", filename, depth);
 
+  //initialize block
   BF_Block *block;
   BF_Block_Init(&block);
 
+  //set entry header
   Entry empty;
-
   empty.header.local_depth = depth;
   empty.header.size = 0;
 
+  //open file
   int id;
   HT_OpenIndex(filename, &id);
   int fd = indexArray[id].fd;
@@ -133,17 +144,14 @@ HT_ErrorCode HT_CreateIndex(const char *filename, int depth)
   int hashN = pow(2.0, (double)depth);
   hashEntry.header.size = hashN;
   for (int i = 0; i < hashN; i++)
+  {
     hashEntry.hashNode[i].value = i;
+  }
 
-  // create first block for info
-  printf("fd=%d\n", fd);
-  CALL_BF(BF_AllocateBlock(fd, block));
-  char *data = BF_Block_GetData(block);
-  memcpy(data, &depth, sizeof(int));
-  BF_Block_SetDirty(block);
-  CALL_BF(BF_UnpinBlock(block));
+  CALL_OR_DIE(createInfoBlock(fd, block, depth));
 
   int blockN;
+  char * data;
 
   CALL_BF(BF_AllocateBlock(fd, block));
   CALL_BF(BF_UnpinBlock(block));
@@ -284,7 +292,7 @@ HT_ErrorCode HT_InsertEntry(int indexDesc, Record record, tid* tupleId, UpdateRe
   int local_depth = entry.header.local_depth;
 
   // check for available space
-  if (size >= max_records)
+  if (size >= MAX_RECORDS)
   {
     // space needs to be allocated
     if (local_depth == depth)
