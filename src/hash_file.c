@@ -85,7 +85,6 @@ HT_ErrorCode HT_Init()
     printf("Runner.exe needs at least one file to run. Please ensure that MAX_OPEN_FILES is not 0\n");
     return HT_ERROR;
   }
-  // CALL_BF(BF_Init(LRU));
   for (int i = 0; i < MAX_OPEN_FILES; i++)
   {
     indexArray[i].used = 0;
@@ -118,10 +117,49 @@ HT_ErrorCode createInfoBlock(int fd, BF_Block *block, int depth)
   return HT_OK;
 }
 
+HT_ErrorCode createHashTable(int fd, BF_Block *block, int depth)
+{
+  HashEntry hashEntry;
+  int hashN = pow(2.0, (double)depth);
+  int blockN;
+  char * data;
+
+  //allocate space for the HashTable
+  CALL_BF(BF_AllocateBlock(fd, block));
+  CALL_BF(BF_UnpinBlock(block));
+
+  //set empty entry header
+  Entry empty;
+  empty.header.local_depth = depth;
+  empty.header.size = 0;
+
+  //Link every hash value an empty data block
+  hashEntry.header.size = hashN;
+  for (int i = 0; i < hashN; i++)
+  {
+    hashEntry.hashNode[i].value = i;
+    BF_GetBlockCounter(fd, &blockN);
+    CALL_BF(BF_AllocateBlock(fd, block));
+    data = BF_Block_GetData(block);
+    memcpy(data, &empty, sizeof(Entry));
+    BF_Block_SetDirty(block);
+    CALL_BF(BF_UnpinBlock(block));
+    hashEntry.hashNode[i].block_num = blockN;
+  }
+
+  //Store HashTable
+  BF_GetBlock(fd, 1, block);
+  data = BF_Block_GetData(block);
+  memcpy(data, &hashEntry, sizeof(HashEntry));
+  BF_Block_SetDirty(block);
+  CALL_BF(BF_UnpinBlock(block));
+
+  return HT_OK;
+}
+
 HT_ErrorCode HT_CreateIndex(const char *filename, int depth)
 {
   CALL_OR_DIE(checkCreateIndex(filename, depth));
-  
   CALL_BF(BF_CreateFile(filename));
   printf("Name given : %s, max depth : %i\n", filename, depth);
 
@@ -129,57 +167,19 @@ HT_ErrorCode HT_CreateIndex(const char *filename, int depth)
   BF_Block *block;
   BF_Block_Init(&block);
 
-  //set entry header
-  Entry empty;
-  empty.header.local_depth = depth;
-  empty.header.size = 0;
-
   //open file
   int id;
   HT_OpenIndex(filename, &id);
   int fd = indexArray[id].fd;
   strcpy(indexArray[id].filename, filename);
 
-  HashEntry hashEntry;
-  int hashN = pow(2.0, (double)depth);
-  hashEntry.header.size = hashN;
-  for (int i = 0; i < hashN; i++)
-  {
-    hashEntry.hashNode[i].value = i;
-  }
-
+  //Create Info block and HashTable
   CALL_OR_DIE(createInfoBlock(fd, block, depth));
+  CALL_OR_DIE(createHashTable(fd, block, depth));
 
-  int blockN;
-  char * data;
-
-  CALL_BF(BF_AllocateBlock(fd, block));
-  CALL_BF(BF_UnpinBlock(block));
-
-  for (int i = 0; i < hashN; i++)
-  {
-
-    // if(i % 2 == 0){
-    BF_GetBlockCounter(fd, &blockN);
-    CALL_BF(BF_AllocateBlock(fd, block));
-    data = BF_Block_GetData(block);
-    memcpy(data, &empty, sizeof(Entry));
-    BF_Block_SetDirty(block);
-    CALL_BF(BF_UnpinBlock(block));
-    //}
-    hashEntry.hashNode[i].block_num = blockN;
-  }
-
-  // create second block for hashing
-  BF_GetBlock(fd, 1, block);
-  data = BF_Block_GetData(block);
-  memcpy(data, &hashEntry, sizeof(HashEntry));
-  BF_Block_SetDirty(block);
-  CALL_BF(BF_UnpinBlock(block));
-
+  //destroy block
   BF_Block_Destroy(&block);
   printf("File was not created before\n");
-
   HT_CloseFile(id);
 
   return HT_OK;
@@ -187,28 +187,30 @@ HT_ErrorCode HT_CreateIndex(const char *filename, int depth)
 
 HT_ErrorCode HT_OpenIndex(const char *fileName, int *indexDesc)
 {
-
   int found = 0; // bool flag.
 
   // find empty spot
   for (int i = 0; i < MAX_OPEN_FILES; i++)
+  {
     if (indexArray[i].used == 0)
     {
       (*indexDesc) = i;
       found = 1;
       break;
     }
-
+  }
+  
   // if table is full return error
   if (found == 0)
   {
     printf("The maximum number of open files has been reached.Please close a file and try again!\n");
     return HT_ERROR;
   }
+
   int fd;
   CALL_BF(BF_OpenFile(fileName, &fd));
-  int pos = (*indexDesc);   // Return position
-  indexArray[pos].fd = fd;  // Save fileDesc
+  int pos = (*indexDesc);   // Get position
+  indexArray[pos].fd = fd;  // Store fileDesc
   indexArray[pos].used = 1; // Set position to used
 
   return HT_OK;
@@ -216,21 +218,16 @@ HT_ErrorCode HT_OpenIndex(const char *fileName, int *indexDesc)
 
 HT_ErrorCode HT_CloseFile(int indexDesc)
 {
-
   if (indexArray[indexDesc].used == 0)
   {
     printf("Trying to close an already closed file!\n");
     return HT_ERROR;
   }
 
-  // printf("Entering HT_CloseFile\n");
   int fd = indexArray[indexDesc].fd;
-
   indexArray[indexDesc].used = 0; // Free up position
-  // indexArray[indexDesc].fd = -1;  // -1 means that there is no file in position indexDesc
 
   CALL_BF(BF_CloseFile(fd));
-
   return HT_OK;
 }
 

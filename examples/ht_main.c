@@ -49,16 +49,6 @@ const char *cities[] = {
     "Munich",
     "Miami"};
 
-#define CALL_OR_DIE(call)     \
-  {                           \
-    HT_ErrorCode code = call; \
-    if (code != HT_OK)        \
-    {                         \
-      printf("Error\n");      \
-      exit(code);             \
-    }                         \
-  }
-
 int main()
 {
   BF_Init(LRU);
