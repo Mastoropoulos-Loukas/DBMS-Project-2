@@ -48,22 +48,34 @@ tid getTid(int blockId, int index){
   return temp;
 }
 
+/*
+  prints the contents of the 'array' of size 'size'
+*/
 void printUpdateArray(UpdateRecordArray *array, int size){
     for(int i = 0; i < MAX_RECORDS; i++)printf("city: %s, surname: %s, oldTid: %i, newTid: %i\n",\
     array[i].city, array[i].surname, array[i].oldTupleId, array[i].newTupleId);
 }
 
+/*
+  prints the contents of a 'record'
+*/
 void printRecord(Record record)
 {
   printf("Entry with id : %i, city : %s, name : %s, and surname : %s\n",
          record.id, record.city, record.name, record.surname);
 }
 
-void printHashNode(HashNode node)
+/*
+  prints the contents of a 'hashNode'
+*/
+void printHashNode(HashNode hashNode)
 {
-  printf("HashNode with value : %i, and block_num : %i\n", node.value, node.block_num);
+  printf("HashNode with value : %i, and block_num : %i\n", hashNode.value, hashNode.block_num);
 }
 
+/*
+  returns the hash value of an 'id' for a table of global 'depth'
+*/
 unsigned int hashFunction(int id, int depth)
 {
 
@@ -92,9 +104,12 @@ HT_ErrorCode HT_Init()
   return HT_OK;
 }
 
-HT_ErrorCode checkCreateIndex(const char* file, int depth)
+/*
+  checks the input for HT_CreateIndex.
+*/
+HT_ErrorCode checkCreateIndex(const char* filename, int depth)
 {
-  if (file == NULL || strcmp(file, "") == 0)
+  if (filename == NULL || strcmp(filename, "") == 0)
   {
     printf("Please provide a name for the output file!\n");
     return HT_ERROR;
@@ -107,6 +122,10 @@ HT_ErrorCode checkCreateIndex(const char* file, int depth)
   return HT_OK;
 }
 
+/*
+  block: previously initialized BF_Block pointer (does not get destroyed)
+  allocates and stores to the first block of the file with fileDesc 'fd', the global 'depht'
+*/
 HT_ErrorCode createInfoBlock(int fd, BF_Block *block, int depth)
 {
   CALL_BF(BF_AllocateBlock(fd, block));
@@ -116,6 +135,7 @@ HT_ErrorCode createInfoBlock(int fd, BF_Block *block, int depth)
   CALL_BF(BF_UnpinBlock(block));
   return HT_OK;
 }
+
 
 HT_ErrorCode createHashTable(int fd, BF_Block *block, int depth)
 {
@@ -355,6 +375,70 @@ HT_ErrorCode getNewBlock(int fd, BF_Block *block, int *block_num)
   return HT_OK;
 }
 
+HT_ErrorCode reassignRecords(int fd, BF_Block *block, Entry entry, int blockN, int blockNew, int half, int depth, UpdateRecordArray *updateArray, Entry *old, Entry *new)
+{
+  for (int i = 0; i < entry.header.size; i++)
+  {
+    if (hashFunction(entry.record[i].id, depth) <= half)
+    {
+      //reassign to new position in old block
+      old->record[old->header.size] = entry.record[i];
+      
+      //update array
+      strcpy(updateArray[i].city, entry.record[i].city);
+      strcpy(updateArray[i].surname, entry.record[i].surname);
+      updateArray[i].oldTupleId = getTid(blockN, i);
+      updateArray[i].newTupleId = getTid(blockN, old->header.size);
+      
+      old->header.size++;  
+    }
+    else
+    {
+      // assign to new block
+      new->record[new->header.size] = entry.record[i];
+
+      //update array
+      strcpy(updateArray[i].city, entry.record[i].city);
+      strcpy(updateArray[i].surname, entry.record[i].surname);
+      updateArray[i].oldTupleId = getTid(blockN, i);
+      updateArray[i].newTupleId = getTid(blockNew, new->header.size);
+
+      new->header.size++;
+    }
+  }
+
+  return HT_OK;
+}
+
+HT_ErrorCode insertRecordAfterSplit(Record record, int depth, int half, tid *tupleId, int blockN, int blockNew, Entry *old, Entry *new)
+{
+  //store given record
+  if (hashFunction(record.id, depth) <= half)
+  {
+    old->record[old->header.size] = record;
+    *tupleId = getTid(blockN, old->header.size);
+    old->header.size++;
+  }
+  else
+  {
+    new->record[new->header.size] = record;
+    *tupleId = getTid(blockNew, new->header.size);
+    new->header.size++;
+  }
+
+  return HT_OK;
+}
+
+HT_ErrorCode setEntry(int fd, BF_Block *block, int dest_block_num, Entry *entry){
+  CALL_BF(BF_GetBlock(fd, dest_block_num, block));
+  char *data = BF_Block_GetData(block);
+  memcpy(data, entry, sizeof(Entry));
+  BF_Block_SetDirty(block);
+  CALL_BF(BF_UnpinBlock(block));
+
+  return HT_OK;
+}
+
 HT_ErrorCode splitHashTable(int fd, BF_Block *block, int depth, int blockN, Record record, tid *tupleId, UpdateRecordArray *updateArray , Entry entry)
 {
   //get HashTable
@@ -381,65 +465,16 @@ HT_ErrorCode splitHashTable(int fd, BF_Block *block, int depth, int blockN, Reco
   for (int i = half + 1; i <= end; i++)
     hashEntry.hashNode[i].block_num = blockNew;
 
+  //update HashTable and re-assing records
   CALL_OR_DIE(setHashTable(fd, block, &hashEntry));
+  CALL_OR_DIE(reassignRecords(fd, block, entry, blockN, blockNew, half, depth, updateArray, &old, &new));
 
-  for (int i = 0; i < entry.header.size; i++)
-  {
-    if (hashFunction(entry.record[i].id, depth) <= half)
-    {
-      //reassign to new position in old block
-      old.record[old.header.size] = entry.record[i];
-      
-      //update array
-      strcpy(updateArray[i].city, entry.record[i].city);
-      strcpy(updateArray[i].surname, entry.record[i].surname);
-      updateArray[i].oldTupleId = getTid(blockN, i);
-      updateArray[i].newTupleId = getTid(blockN, old.header.size);
-      
-      old.header.size++;  
-    }
-    else
-    {
-      // assign to new block
-      new.record[new.header.size] = entry.record[i];
+  //insert new record (after splitting)
+  CALL_OR_DIE(insertRecordAfterSplit(record, depth, half, tupleId, blockN, blockNew, &old, &new));
 
-      //update array
-      strcpy(updateArray[i].city, entry.record[i].city);
-      strcpy(updateArray[i].surname, entry.record[i].surname);
-      updateArray[i].oldTupleId = getTid(blockN, i);
-      updateArray[i].newTupleId = getTid(blockNew, new.header.size);
-
-      new.header.size++;
-    }
-  }
-
-  //store given record
-  if (hashFunction(record.id, depth) <= half)
-  {
-    old.record[old.header.size] = record;
-    *tupleId = getTid(blockN, old.header.size);
-    old.header.size++;
-  }
-  else
-  {
-    new.record[new.header.size] = record;
-    *tupleId = getTid(blockNew, new.header.size);
-    new.header.size++;
-  }
-
-  // write old
-  CALL_BF(BF_GetBlock(fd, blockN, block));
-  char *data = BF_Block_GetData(block);
-  memcpy(data, &old, sizeof(Entry));
-  BF_Block_SetDirty(block);
-  CALL_BF(BF_UnpinBlock(block));
-
-  // write new
-  CALL_BF(BF_GetBlock(fd, blockNew, block));
-  data = BF_Block_GetData(block);
-  memcpy(data, &new, sizeof(Entry));
-  BF_Block_SetDirty(block);
-  CALL_BF(BF_UnpinBlock(block));
+  //store created/modified entries
+  CALL_OR_DIE(setEntry(fd, block, blockN, &old));
+  CALL_OR_DIE(setEntry(fd, block, blockNew, &new));
 
   return HT_OK;
 }
@@ -453,8 +488,6 @@ HT_ErrorCode HT_InsertEntry(int indexDesc, Record record, tid* tupleId, UpdateRe
   BF_Block *block;
   BF_Block_Init(&block);
   
-  int new = 0; // bool flag
-
   // get depth
   int depth;
   int fd = indexArray[indexDesc].fd;
@@ -481,33 +514,28 @@ HT_ErrorCode HT_InsertEntry(int indexDesc, Record record, tid* tupleId, UpdateRe
   // check for available space
   if (size >= MAX_RECORDS)
   {
-    // space needs to be allocated
+    // check local depth
     if (local_depth == depth)
     {
+      //double HashTable
       CALL_OR_DIE(doubleHashTable(fd, block, &hashEntry));
       depth++;
       CALL_OR_DIE(setDepth(fd, block, depth));
     }
-    
+    //spit hashTable's pointers
     CALL_OR_DIE(splitHashTable(fd, block, depth, blockN, record, tupleId, updateArray, entry));
     return HT_OK;
   }
 
-  CALL_BF(BF_GetBlock(fd, blockN, block));
+  //space available
+  CALL_OR_DIE(getEntry(fd, block, blockN, &entry));
 
-  // write new info
-  data = BF_Block_GetData(block);
-  if (new == 0)
-    memcpy(&entry, data, sizeof(Entry));    // if space was previously allocated, get previous data
-  entry.record[entry.header.size] = record; // add record
+  //insert new record (whithout splitting)
+  entry.record[entry.header.size] = record;
   *tupleId  = getTid(blockN, entry.header.size);
-  (entry.header.size)++;                    // update header size
+  (entry.header.size)++;
 
-  memcpy(data, &entry, sizeof(Entry));
-  BF_Block_SetDirty(block);
-  CALL_BF(BF_UnpinBlock(block));
-  BF_Block_Destroy(&block);
-
+  CALL_OR_DIE(setEntry(fd, block, blockN, &entry));
   return HT_OK;
 }
 
