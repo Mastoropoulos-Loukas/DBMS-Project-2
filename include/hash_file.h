@@ -127,4 +127,11 @@ HT_ErrorCode HashStatistics(
 	char *filename
 );
 
+unsigned int hashFunction(int, int);
+HT_ErrorCode getNewBlock(int, BF_Block*, int*);
+HT_ErrorCode getDepth(int, BF_Block*, int*);
+HT_ErrorCode setDepth(int, BF_Block*, int);
+
+
+
 #endif // HASH_FILE_H

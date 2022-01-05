@@ -70,6 +70,31 @@ int main()
   CALL_OR_DIE(HT_CreateIndex("primary.db", GLOBAL_DEPT));
 
   CALL_OR_DIE(SHT_Init());
-  int indexDesc;
   CALL_OR_DIE(SHT_CreateSecondaryIndex(FILE_NAME, "surnames", strlen("surnames"), GLOBAL_DEPT, "primary.db"));
+  int sindexDesc;
+  CALL_OR_DIE(SHT_OpenSecondaryIndex(FILE_NAME, &sindexDesc));
+
+  SecondaryRecord record;
+  srand(12569874);
+  int r;
+  printf("Insert Entries\n");
+  for (int id = 0; id < RECORDS_NUM; ++id)
+  {
+    // create a record
+    record.tupleId = id;
+    r = rand() % 12;
+    memcpy(record.index_key, surnames[r], strlen(surnames[r]) + 1);
+
+    CALL_OR_DIE(SHT_SecondaryInsertEntry(sindexDesc, record));
+  }
+
+  printf("RUN PrintAllEntries\n");
+  int id = rand() % RECORDS_NUM;
+  char* str = "test";
+  CALL_OR_DIE(SHT_PrintAllEntries(sindexDesc, str));
+  // CALL_OR_DIE(HT_PrintAllEntries(indexDesc, NULL));
+  //CALL_OR_DIE(HashStatistics(FILE_NAME));
+
+  CALL_OR_DIE(SHT_CloseSecondaryIndex(sindexDesc));
+  BF_Close();
 }
