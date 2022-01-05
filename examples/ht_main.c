@@ -94,6 +94,7 @@ int main()
   int id = rand() % RECORDS_NUM;
   CALL_OR_DIE(HT_PrintAllEntries(indexDesc, &id));
   // CALL_OR_DIE(HT_PrintAllEntries(indexDesc, NULL));
+  //CALL_OR_DIE(HashStatistics(FILE_NAME));
 
   CALL_OR_DIE(HT_CloseFile(indexDesc));
   BF_Close();
