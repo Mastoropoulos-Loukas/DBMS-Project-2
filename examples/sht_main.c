@@ -6,7 +6,7 @@
 #include "hash_file.h"
 #include "sht_file.h"
 
-#define RECORDS_NUM 1000 // you can change it if you want
+#define RECORDS_NUM 10 // you can change it if you want
 #define GLOBAL_DEPT 2    // you can change it if you want
 #define FILE_NAME "secondary.db"
 
