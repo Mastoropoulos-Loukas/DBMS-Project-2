@@ -65,36 +65,54 @@ const char* cities[] = {
 int main()
 {
   BF_Init(LRU);
+  int indexDesc;
 
   CALL_OR_DIE(HT_Init());
   CALL_OR_DIE(HT_CreateIndex("primary.db", GLOBAL_DEPT));
+  CALL_OR_DIE(HT_OpenIndex("primary.db", &indexDesc));
 
   CALL_OR_DIE(SHT_Init());
   CALL_OR_DIE(SHT_CreateSecondaryIndex(FILE_NAME, "surnames", strlen("surnames"), GLOBAL_DEPT, "primary.db"));
   int sindexDesc;
   CALL_OR_DIE(SHT_OpenSecondaryIndex(FILE_NAME, &sindexDesc));
 
-  SecondaryRecord record;
+  SecondaryRecord secr;
+  Record record;
   srand(12569874);
-  int r;
+  UpdateRecordArray update[MAX_RECORDS];
+  int r1, r2, r3;
   printf("Insert Entries\n");
-  for (int id = 0; id < RECORDS_NUM; ++id)
+  for (int id = 0; id < 100; ++id)
   {
+    tid tupleId;
+
     // create a record
-    record.tupleId = id;
-    r = rand() % 12;
-    memcpy(record.index_key, surnames[r], strlen(surnames[r]) + 1);
+    record.id = id;
+    r1 = rand() % 12;
+    memcpy(record.name, names[r1], strlen(names[r1]) + 1);
+    r2 = rand() % 12;
+    memcpy(record.surname, surnames[r2], strlen(surnames[r2]) + 1);
+    r3 = rand() % 10;
+    memcpy(record.city, cities[r3], strlen(cities[r3]) + 1);
 
-    CALL_OR_DIE(SHT_SecondaryInsertEntry(sindexDesc, record));
+    CALL_OR_DIE(HT_InsertEntry(indexDesc, record, &tupleId, update));
+
+    // create a record
+    secr.tupleId = tupleId;
+    memcpy(secr.index_key, surnames[r2], strlen(surnames[r2]) + 1);
+    CALL_OR_DIE(SHT_SecondaryInsertEntry(sindexDesc, secr));
+    //updatesht(update)
   }
-
-  printf("RUN PrintAllEntries\n");
-  int id = rand() % RECORDS_NUM;
-  char* str = "test";
-  CALL_OR_DIE(SHT_PrintAllEntries(sindexDesc, str));
-  // CALL_OR_DIE(HT_PrintAllEntries(indexDesc, NULL));
+  
+  // printf("RUN PrintAllEntries\n");
+  // int id = rand() % RECORDS_NUM;
+  // char* str = "test";
+  CALL_OR_DIE(HT_PrintAllEntries(indexDesc, NULL));
+  CALL_OR_DIE(SHT_PrintAllEntries(sindexDesc, "surnames"));
   //CALL_OR_DIE(HashStatistics(FILE_NAME));
+  
 
+  CALL_OR_DIE(HT_CloseFile(indexDesc));
   CALL_OR_DIE(SHT_CloseSecondaryIndex(sindexDesc));
   BF_Close();
 }

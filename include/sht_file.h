@@ -42,6 +42,7 @@ typedef struct
 #define SEC_MAX_NODES ((BF_BLOCK_SIZE - sizeof(SecHashHeader)) / sizeof(SecHashNode))
 #define SEC_MAX_RECORDS ((BF_BLOCK_SIZE - sizeof(SecHeader)) / sizeof(SecondaryRecord))
 
+
 //////////////////////////////////////////////////////////////////////////
 
 HT_ErrorCode SHT_Init();
@@ -77,3 +78,5 @@ HT_ErrorCode SHT_InnerJoin(
 	int sindexDesc1, /* θέση στον πίνακα με τα ανοιχτά αρχεία  του αρχείου δευτερεύοντος ευρετηρίου για το πρώτο αρχείο εισόδου */
 	int sindexDesc2, /* θέση στον πίνακα με τα ανοιχτά αρχεία του αρχείου δευτερεύοντος ευρετηρίου για το δεύτερο αρχείο εισόδου */
 	char *index_key /* το κλειδι πανω στο οποιο θα γινει το join. Αν  NULL τοτε επιστρέφεί όλες τις πλειάδες*/);
+
+void testing(char *, char *, int);
