@@ -43,8 +43,7 @@ typedef struct
 
 
 tid getTid(int blockId, int index){
-  int num_of_rec_in_block = (BF_BLOCK_SIZE - sizeof(DataHeader)) / sizeof(Record);
-  tid temp = (blockId+1)*num_of_rec_in_block + index;
+  tid temp = (blockId+1)*MAX_RECORDS + index;
   return temp;
 }
 
@@ -619,6 +618,7 @@ HT_ErrorCode HT_InsertEntry(int indexDesc, Record record, tid* tupleId, UpdateRe
   //insert new record (whithout splitting)
   entry.record[entry.header.size] = record;
   *tupleId  = getTid(blockN, entry.header.size);
+  // printf("block_num = %i, index = %i, tid = %i\n", blockN, entry.header.size, *tupleId);
   (entry.header.size)++;
 
   CALL_OR_DIE(setEntry(fd, block, blockN, &entry));
