@@ -334,22 +334,6 @@ HT_ErrorCode getSecEntry(int fd, BF_Block *block, int bucket, SecEntry *entry)
   return HT_OK;
 }
 
-// /*
-//   block: previously initialized BF_Block pointer (does not get destroyed).
-//   fd: fileDesc of file we want.
-//   Updates the value of the global depth at the disk. (calling function must update memory, if need to)
-// */
-// HT_ErrorCode setDepth(int fd, BF_Block *block, int depth)
-// {
-//   CALL_BF(BF_GetBlock(fd, 0, block));
-//   char *data = BF_Block_GetData(block);
-//   memcpy(data, &depth, sizeof(int));
-//   BF_Block_SetDirty(block);
-//   CALL_BF(BF_UnpinBlock(block));
-
-//   return HT_OK;
-// }
-
 /*
   block: previously initialized BF_Block pointer (does not get destroyed).
   fd: fileDesc of file we want.
@@ -390,20 +374,6 @@ HT_ErrorCode getSecEndPoints(int *first, int *half, int *end, int local_depth, i
 }
 
 /*
-  block: previously initialized BF_Block pointer (does not get destroyed).
-  fd: fileDesc of file we want.
-  Allocates a new block at the end of the file, and stores it's 'block_num'.
-*/
-// HT_ErrorCode getNewBlock(int fd, BF_Block *block, int *block_num)
-// {
-//   BF_GetBlockCounter(fd, block_num);
-//   CALL_BF(BF_AllocateBlock(fd, block));
-//   CALL_BF(BF_UnpinBlock(block));
-  
-//   return HT_OK;
-// }
-
-/*
   Reassigns records from one block to two. Used when need to split. !It doesn't split, it reassigns!
   The two new blocks consist of the old block and a new one that has been allocated.
   block: previously initialized BF_Block pointer (does not get destroyed).
@@ -425,26 +395,12 @@ HT_ErrorCode reassignSecRecords(int fd, BF_Block *block, SecEntry entry, int blo
     {
       //reassign to new position in old block
       old->secRecord[old->secHeader.size] = entry.secRecord[i];
-      
-      //update array
-      // strcpy(updateArray[i].city, entry.secRecord[i].city);
-      // strcpy(updateArray[i].surname, entry.secRecord[i].surname);
-      // updateArray[i].oldTupleId = getTid(blockOld, i);
-      // updateArray[i].newTupleId = getTid(blockOld, old->secHeader.size);
-      
       old->secHeader.size++;  
     }
     else
     {
       // assign to new block
       new->secRecord[new->secHeader.size] = entry.secRecord[i];
-
-      //update array
-      // strcpy(updateArray[i].city, entry.secRecord[i].city);
-      // strcpy(updateArray[i].surname, entry.secRecord[i].surname);
-      // updateArray[i].oldTupleId = getTid(blockOld, i);
-      // updateArray[i].newTupleId = getTid(blockNew, new->secHeader.size);
-
       new->secHeader.size++;
     }
   }
@@ -632,9 +588,6 @@ HT_ErrorCode SHT_SecondaryInsertEntry(int indexDesc, SecondaryRecord record)
 
   CALL_OR_DIE(setSecEntry(fd, block, blockN, &entry));
   return HT_OK;
-
-
-  return HT_OK;
 }
 
 HT_ErrorCode SHT_SecondaryUpdateEntry(int indexDesc, UpdateRecordArray *updateArray)
@@ -693,7 +646,6 @@ HT_ErrorCode SHT_PrintAllEntries(int sindexDesc, char *index_key)
 
   BF_Block_Destroy(&block);
   return htCode;
-  return HT_OK;
 }
 
 HT_ErrorCode SHT_HashStatistics(char *filename)
