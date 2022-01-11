@@ -184,7 +184,7 @@ HT_ErrorCode HT_CreateIndex(const char *filename, int depth)
 {
   CALL_OR_DIE(checkCreateIndex(filename, depth));
   CALL_BF(BF_CreateFile(filename));
-  printf("Name given : %s, max depth : %i\n", filename, depth);
+  // printf("Name given : %s, max depth : %i\n", filename, depth);
 
   //initialize block
   BF_Block *block;
@@ -202,7 +202,7 @@ HT_ErrorCode HT_CreateIndex(const char *filename, int depth)
 
   //destroy block
   BF_Block_Destroy(&block);
-  printf("File was not created before\n");
+  // printf("File was not created before\n");
   HT_CloseFile(id);
 
   return HT_OK;
