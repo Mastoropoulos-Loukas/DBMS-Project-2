@@ -566,7 +566,7 @@ HT_ErrorCode splitHashTable(int fd, BF_Block *block, int depth, int bucket, Reco
 
 HT_ErrorCode HT_InsertEntry(int indexDesc, Record record, tid* tupleId, UpdateRecordArray* updateArray)
 {
-  printRecord(record);
+  // printRecord(record);
   CALL_OR_DIE(checkInsertEntry(indexDesc, updateArray));
 
   //Initialize block

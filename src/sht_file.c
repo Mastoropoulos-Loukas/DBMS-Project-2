@@ -343,8 +343,7 @@ HT_ErrorCode getSecEntry(int fd, BF_Block *block, int bucket, SecEntry *entry)
   BF_GetBlock(fd, bucket, block);
   char *data = BF_Block_GetData(block);
   memcpy(entry, data, sizeof(SecEntry));
-  CALL_BF(BF_UnpinBlock(block));
-
+  CALL_BF(BF_UnpinBlock(block)); 
   return HT_OK;
 }
 
@@ -510,6 +509,8 @@ HT_ErrorCode setSecEntry(int fd, BF_Block *block, int dest_block_num, SecEntry *
   return HT_OK;
 }
 
+void SHT_PrintSecHashEntry(SecHashEntry, int, int, BF_Block*);
+
 /*
   block: previously initialized BF_Block pointer (does not get destroyed).
   fd: fileDesc of file we want.
@@ -521,8 +522,8 @@ HT_ErrorCode doubleSecHashTable(int fd, BF_Block *block)
   CALL_OR_DIE(getSecHashTable(fd, block, 1, &hashEntry));
   //double table
   int size = hashEntry.secHeader.size;
+  size *= 2;
   int maxOldNum = (size / SEC_MAX_NODES) + 1;
-  int maxNewNum = ( (2*size) / SEC_MAX_NODES) + 1;
 
   SecHashEntry olds[maxOldNum];
   olds[0] = hashEntry;
@@ -537,7 +538,7 @@ HT_ErrorCode doubleSecHashTable(int fd, BF_Block *block)
   for (unsigned int i = 0; i < size; i++)
   {
     //new is full
-    if( (i % SEC_MAX_NODES) == 0)
+    if( (i % SEC_MAX_NODES) == 0 && i >= SEC_MAX_NODES)
     {
       //save current new block
       if(newNum == 0)bn = 1;
@@ -546,6 +547,7 @@ HT_ErrorCode doubleSecHashTable(int fd, BF_Block *block)
 
       if(newNum < maxOldNum - 1)bnNext = olds[newNum].secHeader.next_hblock;
       else CALL_BF(BF_GetBlockCounter(fd, &bnNext));
+      printf("\n\n\n\n\nbnNext = %i\n\n\n\n\n\n", bnNext);
       new.secHeader.next_hblock = bnNext;
       new.secHeader.size = SEC_MAX_NODES;
       CALL_OR_DIE(setSecHashTable(fd, block, bn, &new));
@@ -644,6 +646,8 @@ HT_ErrorCode splitSecHashTable(int fd, BF_Block *block, int depth, int bucket, S
   return HT_OK;
 }
 
+void SHT_PrintSecHashTable(int, BF_Block *, int);
+
 HT_ErrorCode SHT_SecondaryInsertEntry(int indexDesc, SecondaryRecord record)
 {
   // insert code here
@@ -653,7 +657,7 @@ HT_ErrorCode SHT_SecondaryInsertEntry(int indexDesc, SecondaryRecord record)
   //Initialize block
   BF_Block *block;
   BF_Block_Init(&block);
-  
+
   // get depth
   int depth;
   int fd = secIndexArray[indexDesc].fd;
@@ -744,8 +748,10 @@ void SHT_PrintSecEntry(SecEntry entry)
 void SHT_PrintSecHashEntry(SecHashEntry hEntry, int full, int fd, BF_Block *block)
 {
   SecEntry entry;
+  int size = hEntry.secHeader.size;
+  size = (size > SEC_MAX_NODES) ? SEC_MAX_NODES : size;
 
-  for(int i = 0; i < hEntry.secHeader.size; i++)
+  for(int i = 0; i < size; i++)
   {
     if(full)printf("\n");
     SHT_PrintHashNode(hEntry.secHashNode[i]);
@@ -775,8 +781,9 @@ void SHT_PrintSecHashTable(int fd, BF_Block *block, int full)
   do
   {
     CALL_OR_DIE(getSecHashTable(fd, block, block_num, &table));
-    block_num = table.secHeader.next_hblock;
 
+    printf("\nHashTable at block_num: %i\n", block_num); 
+    block_num = table.secHeader.next_hblock;
     SHT_PrintSecHashEntry(table, full, fd, block);
   } while (block_num != -1);
 }
