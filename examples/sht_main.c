@@ -82,7 +82,7 @@ int main()
   UpdateRecordArray update[MAX_RECORDS];
   int r1, r2, r3;
   printf("Insert Entries\n");
-  for (int id = 0; id < 100; ++id)
+  for (int id = 0; id < 10; ++id)
   {
     tid tupleId;
 
