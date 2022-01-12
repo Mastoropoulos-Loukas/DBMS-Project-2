@@ -14,6 +14,10 @@ typedef struct
 	char city[20];
 	int oldTupleId; // η παλια θέση της εγγραφής πριν την εισαγωγή της νέας
 	int newTupleId; // η νέα θέση της εγγραφής που μετακινήθηκε μετα την εισαγωγή της νέας εγγραφής
+	
+	int old_block_num;
+	int old_index;
+	int new_block_num;
 
 } UpdateRecordArray;
 

@@ -593,6 +593,21 @@ HT_ErrorCode SHT_SecondaryInsertEntry(int indexDesc, SecondaryRecord record)
 HT_ErrorCode SHT_SecondaryUpdateEntry(int indexDesc, UpdateRecordArray *updateArray)
 {
   // insert code here
+  BF_Block* block;
+  SecEntry* sec;
+
+  BF_Block_Init(&block);
+  
+  BF_GetBlock(indexDesc, updateArray->old_block_num, block);
+  char *data = BF_Block_GetData(block);
+  memcpy(sec, data, sizeof(SecEntry));
+
+  sec->secRecord[updateArray->old_index].tupleId=updateArray->newTupleId;
+
+  memcpy(data,sec,sizeof(SecEntry));
+  
+  BF_Block_SetDirty(block);
+  CALL_OR_DIE(BF_UnpinBlock(block));
   return HT_OK;
 }
 
