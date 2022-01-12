@@ -102,6 +102,7 @@ int main()
     memcpy(secr.index_key, surnames[r2], strlen(surnames[r2]) + 1);
     CALL_OR_DIE(SHT_SecondaryInsertEntry(sindexDesc, secr));
     //updatesht(update)
+    CALL_OR_DIE(SHT_SecondaryUpdateEntry(indexDesc,update));
   }
   
   // printf("RUN PrintAllEntries\n");

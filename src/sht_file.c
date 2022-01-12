@@ -594,20 +594,37 @@ HT_ErrorCode SHT_SecondaryUpdateEntry(int indexDesc, UpdateRecordArray *updateAr
 {
   // insert code here
   BF_Block* block;
-  SecEntry* sec;
-
   BF_Block_Init(&block);
-  
-  BF_GetBlock(indexDesc, updateArray->old_block_num, block);
-  char *data = BF_Block_GetData(block);
-  memcpy(sec, data, sizeof(SecEntry));
+  printf("Fine\n");
 
-  sec->secRecord[updateArray->old_index].tupleId=updateArray->newTupleId;
+  // get depth
+  int depth;
+  int fd = secIndexArray[indexDesc].fd;
+  CALL_OR_DIE(getDepth(fd, block, &depth));
 
-  memcpy(data,sec,sizeof(SecEntry));
+
+  //get HashTable
+  SecHashEntry hashEntry;  
+  CALL_OR_DIE(getSecHashTable(fd, block, 1, &hashEntry));
+
+
+  //get bucket
+  int value = hashFunction(updateArray->oldTupleId, depth);   /// Otan arxisoyme na kanoyme hash me vasi to surname/city prepei na to allaksoyme
+  int blockN = getSecBucket(value, hashEntry);
+
   
-  BF_Block_SetDirty(block);
-  CALL_OR_DIE(BF_UnpinBlock(block));
+  //get bucket's entry
+  SecEntry entry;
+  CALL_OR_DIE(getSecEntry(fd, block, blockN, &entry));
+
+  int index = updateArray[0].oldTupleId - (blockN+1)*MAX_RECORDS;
+
+  entry.secRecord[index].tupleId=updateArray->newTupleId;
+
+  
+  CALL_OR_DIE(setSecEntry(fd, block, blockN, &entry));
+
+  // CALL_OR_DIE(BF_UnpinBlock(block));
   return HT_OK;
 }
 
@@ -625,7 +642,7 @@ void SHT_PrintHashNode(SecHashNode node)
 */
 void SHT_PrintSecondaryRecord(SecondaryRecord record)
 {
-  printf("inde_key: %s, tupleId: %i\n", record.index_key, record.tupleId);
+  printf("index_key: %s, tupleId: %i\n", record.index_key, record.tupleId);
 }
 
 /*

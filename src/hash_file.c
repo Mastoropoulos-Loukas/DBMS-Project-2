@@ -440,9 +440,9 @@ HT_ErrorCode reassignRecords(int fd, BF_Block *block, Entry entry, int blockOld,
       updateArray[i].oldTupleId = getTid(blockOld, i);
       updateArray[i].newTupleId = getTid(blockNew, new->header.size);
 
-      updateArray->old_block_num=blockOld;
-      updateArray->old_index=i;
-      updateArray->new_block_num=blockNew;
+      updateArray[i].old_block_num=blockOld;
+      updateArray[i].old_index=i;
+      updateArray[i].new_block_num=blockNew;
 
       new->header.size++;
     }
