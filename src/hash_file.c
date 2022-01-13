@@ -43,7 +43,7 @@ typedef struct
 
 
 tid getTid(int blockId, int index){
-  tid temp = (blockId+1)*SEC_MAX_RECORDS + index;
+  tid temp = (blockId+1)*MAX_RECORDS + index;
   return temp;
 }
 
@@ -408,6 +408,17 @@ HT_ErrorCode getNewBlock(int fd, BF_Block *block, int *block_num)
   half: medium of [first, end]. first is the first index of the hash table that points to the old block and end is the last.
   updateArray: the array we stores record updates.
 */
+
+int getBlockNumFromTID(tid td){
+
+  return (td / MAX_RECORDS) - 1;
+}
+
+int getIndexFromTID(tid td){
+  
+  return td % MAX_RECORDS;
+}
+
 HT_ErrorCode reassignRecords(int fd, BF_Block *block, Entry entry, int blockOld, int blockNew, int half, int depth, UpdateRecordArray *updateArray, Entry *old, Entry *new)
 {
   for (int i = 0; i < entry.header.size; i++)
@@ -424,9 +435,13 @@ HT_ErrorCode reassignRecords(int fd, BF_Block *block, Entry entry, int blockOld,
         updateArray[i].oldTupleId = getTid(blockOld, i);
         updateArray[i].newTupleId = getTid(blockOld, old->header.size);
         
-        updateArray[i].old_block_num=blockOld;
-        updateArray[i].old_index=i;
-        updateArray[i].new_block_num=blockOld;
+        // if(blockOld==getBlockNumFromTID(getTid(blockOld, i))){
+        //   printf("SMOOTH\n");
+        // }
+
+        // updateArray[i].old_block_num=blockOld;
+        // updateArray[i].old_index=i;
+        // updateArray[i].new_block_num=blockOld;
       }
       old->header.size++;  
     }
@@ -442,9 +457,9 @@ HT_ErrorCode reassignRecords(int fd, BF_Block *block, Entry entry, int blockOld,
         updateArray[i].oldTupleId = getTid(blockOld, i);
         updateArray[i].newTupleId = getTid(blockNew, new->header.size);
 
-        updateArray[i].old_block_num=blockOld;
-        updateArray[i].old_index=i;
-        updateArray[i].new_block_num=blockNew;
+        // updateArray[i].old_block_num=blockOld;
+        // updateArray[i].old_index=i;
+        // updateArray[i].new_block_num=blockNew;
       }
       new->header.size++;
     }
