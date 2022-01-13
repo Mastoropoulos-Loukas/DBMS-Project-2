@@ -43,6 +43,12 @@ typedef struct
 	int tupleId; /*Ακέραιος που προσδιορίζει το block και τη θέση μέσα στο block στην οποία     έγινε η εισαγωγή της εγγραφής στο πρωτεύον ευρετήριο.*/
 } SecondaryRecord;
 
+typedef struct
+{
+  int size;
+  int local_depth;
+} SecHeader;
+
 #define SEC_MAX_NODES ((BF_BLOCK_SIZE - sizeof(SecHashHeader)) / sizeof(SecHashNode))
 #define SEC_MAX_RECORDS ((BF_BLOCK_SIZE - sizeof(SecHeader)) / sizeof(SecondaryRecord))
 

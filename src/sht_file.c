@@ -48,11 +48,6 @@ typedef struct
   int used;
 } SecIndexNode;
 
-typedef struct
-{
-  int size;
-  int local_depth;
-} SecHeader;
 
 typedef struct
 {
@@ -592,39 +587,61 @@ HT_ErrorCode SHT_SecondaryInsertEntry(int indexDesc, SecondaryRecord record)
 
 HT_ErrorCode SHT_SecondaryUpdateEntry(int indexDesc, UpdateRecordArray *updateArray)
 {
+  if(updateArray[0].oldTupleId==-1){
+    return HT_OK;
+  }
   // insert code here
   BF_Block* block;
   BF_Block_Init(&block);
-  printf("Fine\n");
+
 
   // get depth
-  int depth;
-  int fd = secIndexArray[indexDesc].fd;
-  CALL_OR_DIE(getDepth(fd, block, &depth));
+  for(int i=0;i<SEC_MAX_RECORDS;i++){
+
+    // printf("OldTupleID:%i\n",updateArray[i].oldTupleId);
+    // printf("NewTupleID:%i\n",updateArray[i].newTupleId);
+    
+    if(updateArray[i].oldTupleId==updateArray[i].newTupleId){
+      printf("SKIP\n\n");
+      continue;
+    }
+
+    int depth;
+    int fd = secIndexArray[indexDesc].fd;
+    CALL_OR_DIE(getDepth(fd, block, &depth));
 
 
-  //get HashTable
-  SecHashEntry hashEntry;  
-  CALL_OR_DIE(getSecHashTable(fd, block, 1, &hashEntry));
+    //get HashTable
+    SecHashEntry hashEntry;  
+    CALL_OR_DIE(getSecHashTable(fd, block, 1, &hashEntry));
 
 
-  //get bucket
-  int value = hashFunction(updateArray->oldTupleId, depth);   /// Otan arxisoyme na kanoyme hash me vasi to surname/city prepei na to allaksoyme
-  int blockN = getSecBucket(value, hashEntry);
+    //get bucket
+    int value = hashFunction(updateArray[i].oldTupleId, depth);   /// Otan arxisoyme na kanoyme hash me vasi to surname/city prepei na to allaksoyme
+    int blockN = getSecBucket(value, hashEntry);
 
-  
-  //get bucket's entry
-  SecEntry entry;
-  CALL_OR_DIE(getSecEntry(fd, block, blockN, &entry));
 
-  int index = updateArray[0].oldTupleId - (blockN+1)*MAX_RECORDS;
 
-  entry.secRecord[index].tupleId=updateArray->newTupleId;
+    //get bucket's entry
+    SecEntry entry;
+    CALL_OR_DIE(getSecEntry(fd, block, blockN, &entry));
+    // printf("OldTupleID:%i\n",updateArray[i].oldTupleId);
+    // printf("BlockN:%i\n",blockN);
+    
+    int index = updateArray[i].oldTupleId - (updateArray[i].old_block_num)*SEC_MAX_RECORDS; // tupleId % sec_MAX_RECORDS
+    printf("Index WITHOUT mod is %i\n",index);
+    index = updateArray[i].oldTupleId % SEC_MAX_RECORDS;
+    printf("Index WITH mod is %i\n",index);
+    printf("OLD INDEX:%i\n",updateArray[i].old_index);
+    int old_index=updateArray[i].old_index;
 
-  
-  CALL_OR_DIE(setSecEntry(fd, block, blockN, &entry));
+    entry.secRecord[index].tupleId=updateArray[i].newTupleId;
 
+
+    CALL_OR_DIE(setSecEntry(fd, block, blockN, &entry));
+  }
   // CALL_OR_DIE(BF_UnpinBlock(block));
+  BF_Block_Destroy(&block);
   return HT_OK;
 }
 

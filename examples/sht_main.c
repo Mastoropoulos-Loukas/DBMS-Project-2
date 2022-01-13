@@ -79,7 +79,7 @@ int main()
   SecondaryRecord secr;
   Record record;
   srand(12569874);
-  UpdateRecordArray update[MAX_RECORDS];
+  UpdateRecordArray update[SEC_MAX_RECORDS];
   int r1, r2, r3;
   printf("Insert Entries\n");
   for (int id = 0; id < 100; ++id)
@@ -102,7 +102,7 @@ int main()
     memcpy(secr.index_key, surnames[r2], strlen(surnames[r2]) + 1);
     CALL_OR_DIE(SHT_SecondaryInsertEntry(sindexDesc, secr));
     //updatesht(update)
-    CALL_OR_DIE(SHT_SecondaryUpdateEntry(indexDesc,update));
+    CALL_OR_DIE(SHT_SecondaryUpdateEntry(sindexDesc,update));
   }
   
   // printf("RUN PrintAllEntries\n");
