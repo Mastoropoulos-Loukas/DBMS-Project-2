@@ -43,7 +43,7 @@ typedef struct
 
 
 tid getTid(int blockId, int index){
-  tid temp = (blockId+1)*MAX_RECORDS + index;
+  tid temp = (blockId+1)*SEC_MAX_RECORDS + index;
   return temp;
 }
 

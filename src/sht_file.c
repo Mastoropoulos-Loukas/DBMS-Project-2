@@ -629,14 +629,14 @@ HT_ErrorCode SHT_SecondaryUpdateEntry(int indexDesc, UpdateRecordArray *updateAr
     //get bucket's entry
     SecEntry entry;
     CALL_OR_DIE(getSecEntry(fd, block, blockN, &entry));
-    // printf("OldTupleID:%i\n",updateArray[i].oldTupleId);
+    printf("OldTupleID:%i\n",updateArray[i].oldTupleId);
     // printf("BlockN:%i\n",blockN);
     
-    int index = updateArray[i].oldTupleId - (blockN)*SEC_MAX_RECORDS; // tupleId % sec_MAX_RECORDS
+    int index = (updateArray[i].oldTupleId - (blockN+1)*SEC_MAX_RECORDS)% SEC_MAX_RECORDS; // tupleId % sec_MAX_RECORDS
     printf("Index WITHOUT mod is %i\n",index);
-    index = updateArray[i].oldTupleId % SEC_MAX_RECORDS;
-    printf("Index WITH mod is %i\n",index);
-    printf("OLD INDEX:%i\n",updateArray[i].old_index);
+    // index = updateArray[i].oldTupleId % SEC_MAX_RECORDS;
+    // printf("Index WITH mod is %i\n",index);
+    // printf("OLD INDEX:%i\n",updateArray[i].old_index);
     int old_index=updateArray[i].old_index;
 
     entry.secRecord[index].tupleId=updateArray[i].newTupleId;
