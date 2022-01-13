@@ -300,6 +300,7 @@ HT_ErrorCode getSecHashTable(int fd, BF_Block *block,int block_num, SecHashEntry
 */
 int getSecBucket(int fd, BF_Block *block, int value, SecHashEntry *hashEntry, int *hashBN)
 {
+  
   int pos = -1;
   int found = 0;
   *hashBN = 1;
@@ -311,7 +312,10 @@ int getSecBucket(int fd, BF_Block *block, int value, SecHashEntry *hashEntry, in
     if (hashEntry->secHashNode[pos].h_value == value)
       return hashEntry->secHashNode[pos].block_num;
 
-    if(hashEntry->secHeader.next_hblock == -1)break;
+    if(hashEntry->secHeader.next_hblock == -1){
+      printf("ouaou\n");
+      break;
+    }
     *hashBN = hashEntry->secHeader.next_hblock;
     getSecHashTable(fd, block, *hashBN, hashEntry);
   }
@@ -378,6 +382,7 @@ HT_ErrorCode setSecHashTable(int fd, BF_Block *block, int block_num, SecHashEntr
   return HT_OK;
 }
 
+
 /*
   'hashEntry' : hash table.
   'bucket' : block we are interested in.
@@ -390,12 +395,24 @@ HT_ErrorCode getSecEndPoints(int *first, int *half, int *end, int local_depth, i
   //int local_depth = entry.header.local_depth;
   int dif = depth - local_depth;
   int numOfHashes = pow(2.0, (double)dif);
-  for (int pos = 0; pos < hashEntry.secHeader.size; pos++)
+  int pos;
+  printf("num of hashes=%i\n", numOfHashes);
+  printf("hashEntry size = %i \n", hashEntry.secHeader.size);
+  printf("bucket = %i\n", bucket);
+  for (pos = 0; pos < hashEntry.secHeader.size; pos++){ 
+    
+    printf("block_num = %i\n", hashEntry.secHashNode[pos].block_num);
     if (hashEntry.secHashNode[pos].block_num == bucket)
     {
       *first = pos;
       break;
     }
+  }
+  if(pos == hashEntry.secHeader.size)
+  {
+    printf("getSecEndPoints Error! Could not find sec hash node with that block num. Wrong block of hash table given\n");
+    exit(2);
+  }
 
   *half = (*first) + numOfHashes / 2 - 1;
   *end = (*first) + numOfHashes - 1;
@@ -432,16 +449,19 @@ HT_ErrorCode getSecEndPoints(int *first, int *half, int *end, int local_depth, i
 */
 HT_ErrorCode reassignSecRecords(int fd, BF_Block *block, SecEntry entry, int blockOld, int blockNew, int half, int depth, SecEntry *old, SecEntry *new)
 {
+  
   for (int i = 0; i < entry.secHeader.size; i++)
   {
     if (hashFunction(entry.secRecord[i].tupleId, depth) <= half)
     {
+      printf("old\n");
       //reassign to new position in old block
       old->secRecord[old->secHeader.size] = entry.secRecord[i];
       old->secHeader.size++;  
     }
     else
     {
+      printf("hashfunc = %i\n", hashFunction(entry.secRecord[i].tupleId, depth));
       // assign to new block
       new->secRecord[new->secHeader.size] = entry.secRecord[i];
       new->secHeader.size++;
@@ -518,7 +538,6 @@ void SHT_PrintHashNode(SecHashNode node);
 */
 HT_ErrorCode doubleSecHashTable(int fd, BF_Block *block)
 {
-  printf("enters doubleSecHashTable\n");
   SecHashEntry hashEntry;
   CALL_OR_DIE(getSecHashTable(fd, block, 1, &hashEntry));
   //double table
@@ -528,7 +547,6 @@ HT_ErrorCode doubleSecHashTable(int fd, BF_Block *block)
 
   SecHashEntry olds[maxOldNum];
   olds[0] = hashEntry;
-  printf("maxOldnum = %i , size = %i\n", maxOldNum, size);
   for(int i = 1; i < maxOldNum; i++){
     CALL_OR_DIE(getSecHashTable(fd, block, olds[i-1].secHeader.next_hblock, olds+i));
     // SHT_PrintSecHashEntry(olds[i], 0, fd, block);
@@ -545,7 +563,6 @@ HT_ErrorCode doubleSecHashTable(int fd, BF_Block *block)
     //new is full
     if( (i % SEC_MAX_NODES) == 0 && i >= SEC_MAX_NODES)
     {
-      printf("\n\n\n\nhrere to save\n\n\n\n");
       //save current new block
       if(newNum == 0)bn = 1;
       else if(newNum < maxOldNum)bn = olds[newNum - 1].secHeader.next_hblock;
@@ -566,31 +583,19 @@ HT_ErrorCode doubleSecHashTable(int fd, BF_Block *block)
         old = olds[oldNum];
       }
     }
-
-    
     new.secHashNode[i - (SEC_MAX_NODES*newNum)].block_num = old.secHashNode[(i >> 1) - (SEC_MAX_NODES*oldNum)].block_num;
     new.secHashNode[i - (SEC_MAX_NODES*newNum)].h_value = i;
-    printf("for %i-th block of hash table: \n", newNum+1);
-    printf("new.secHashNode[%i] : hashValue = %i, block_num = %i\n",(i - (SEC_MAX_NODES*newNum)), new.secHashNode[i - (SEC_MAX_NODES*newNum)].h_value, new.secHashNode[i - (SEC_MAX_NODES*newNum)].block_num);
-    printf("new address = %p\n", &new);
-
   }
 
   //save last one
   new.secHeader.next_hblock = -1;
   new.secHeader.size = (size % SEC_MAX_NODES == 0) ? SEC_MAX_NODES : (size % SEC_MAX_NODES);
 
-  printf("Just before exit:\n");
-
   if(newNum == 0)bn = 1;
   else if(newNum < maxOldNum)bn = olds[newNum - 1].secHeader.next_hblock;
   else CALL_OR_DIE(getNewBlock(fd, block, &bn));
-  printf("bn = %i, new.new_hblock = %i, new.size = %i\n", bn, new.secHeader.next_hblock, new.secHeader.size);
-  for(int i = 0; i < new.secHeader.size; i++)SHT_PrintHashNode(new.secHashNode[i]);
-    printf("new address = %p\n", &new);
   
   CALL_OR_DIE(setSecHashTable(fd, block, bn, &new));
-  printf("exits\n");
   return HT_OK;
 }
 
@@ -607,9 +612,9 @@ HT_ErrorCode doubleSecHashTable(int fd, BF_Block *block)
 */
 HT_ErrorCode splitSecHashTable(int fd, BF_Block *block, int depth, int bucket, SecondaryRecord record, SecEntry entry, int hashBN)
 {
-
   SecHashEntry hashEntry;
   CALL_OR_DIE(getSecHashTable(fd, block, hashBN, &hashEntry));
+  printf("hashBn = %i\n", hashBN);
 
   //get end points
   int local_depth = entry.secHeader.local_depth;
@@ -636,13 +641,13 @@ HT_ErrorCode splitSecHashTable(int fd, BF_Block *block, int depth, int bucket, S
     {
       if(changed == 0)
       {
-        hashEntry.secHashNode[i].block_num = blockNew;
+        CALL_OR_DIE(getSecHashTable(fd, block, hashEntry.secHeader.next_hblock, &temp));
         changed = 1;
       }
 
       temp.secHashNode[i - SEC_MAX_NODES].block_num = blockNew;
     }
-    hashEntry.secHashNode[i].block_num = blockNew;
+    else hashEntry.secHashNode[i].block_num = blockNew;
   }
 
   //update HashTable and re-assing records
@@ -705,6 +710,7 @@ HT_ErrorCode SHT_SecondaryInsertEntry(int indexDesc, SecondaryRecord record)
       CALL_OR_DIE(setDepth(fd, block, depth));
     }
     //spit hashTable's pointers
+    blockN = getSecBucket(fd, block, value, &hashEntry, &hashBN);
     CALL_OR_DIE(splitSecHashTable(fd, block, depth, blockN, record, entry, hashBN));
     return HT_OK;
   }

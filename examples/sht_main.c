@@ -101,12 +101,11 @@ int main(int argc, char **argv)
     memcpy(secr.index_key, surnames[r2], strlen(surnames[r2]) + 1);
     CALL_OR_DIE(SHT_SecondaryInsertEntry(sindexDesc, secr));
     //updatesht(update)
+    if (id  == atoi(argv[1])-2)CALL_OR_DIE(SHT_PrintAllEntries(sindexDesc, "test"));
   }
   
-  // printf("RUN PrintAllEntries\n");
-  // int id = rand() % RECORDS_NUM;
-  // char* str = "test";
-  CALL_OR_DIE(HT_PrintAllEntries(indexDesc, NULL));
+ 
+  // CALL_OR_DIE(HT_PrintAllEntries(indexDesc, NULL));
   CALL_OR_DIE(SHT_PrintAllEntries(sindexDesc, "surnames"));
   //CALL_OR_DIE(HashStatistics(FILE_NAME));
   
