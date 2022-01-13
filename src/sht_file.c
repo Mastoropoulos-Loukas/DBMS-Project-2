@@ -598,38 +598,31 @@ HT_ErrorCode SHT_SecondaryUpdateEntry(int indexDesc, UpdateRecordArray *updateAr
   if(updateArray[0].oldTupleId==-1){
     return HT_OK;
   }
+
+  // printUpdateArray(updateArray);
+
   // insert code here
   BF_Block* block;
   BF_Block_Init(&block);
 
 
-  for(int i=0;i<SEC_MAX_RECORDS;i++){
+  for(int i=0;i<MAX_RECORDS;i++){
 
-    // printf("OldTupleID:%i\n",updateArray[i].oldTupleId);
-    // printf("NewTupleID:%i\n",updateArray[i].newTupleId);
-    
     if(updateArray[i].oldTupleId==updateArray[i].newTupleId){
-      printf("SKIP\n\n");
       continue;
     }
 
     int depth;
     int fd = secIndexArray[indexDesc].fd;
-
-    // BF_GetBlock(fd,updateArray[i].old_block_num,block);
     CALL_OR_DIE(getDepth(fd, block, &depth));
-
 
     //get HashTable
     SecHashEntry hashEntry;  
     CALL_OR_DIE(getSecHashTable(fd, block, 1, &hashEntry));
 
-
     //get bucket
     int value = hashFunction(updateArray[i].oldTupleId, depth);   /// Otan arxisoyme na kanoyme hash me vasi to surname/city prepei na to allaksoyme
     int blockN = getSecBucket(value, hashEntry);
-
-
 
     //get bucket's entry
     SecEntry entry;

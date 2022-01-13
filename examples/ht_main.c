@@ -85,7 +85,7 @@ int main()
     if(update[0].oldTupleId != 0)
     {
       printf("\nPrinting update array: \n");
-      printUpdateArray(update, MAX_RECORDS);
+      printUpdateArray(update);
       printf("\n");
     }
   }

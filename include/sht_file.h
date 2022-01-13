@@ -90,3 +90,4 @@ HT_ErrorCode SHT_InnerJoin(
 	char *index_key /* το κλειδι πανω στο οποιο θα γινει το join. Αν  NULL τοτε επιστρέφεί όλες τις πλειάδες*/);
 
 void testing(char *, char *, int);
+void SHT_PrintSecHashTable(int fd, BF_Block *block, int full);

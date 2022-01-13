@@ -65,8 +65,6 @@ typedef struct Record
     }                         \
   }
 
-void printUpdateArray(UpdateRecordArray * array, int size);
-
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 /*
@@ -137,6 +135,8 @@ HT_ErrorCode getDepth(int, BF_Block*, int*);
 HT_ErrorCode setDepth(int, BF_Block*, int);
 int getBlockNumFromTID(tid);
 int getIndexFromTID(tid);
+void printUpdateArray(UpdateRecordArray * array);
+
 
 
 

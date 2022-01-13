@@ -50,7 +50,9 @@ tid getTid(int blockId, int index){
 /*
   prints the contents of the 'array' of size 'size'
 */
-void printUpdateArray(UpdateRecordArray *array, int size){
+void printUpdateArray(UpdateRecordArray *array){
+    if(array[0].oldTupleId == -1)return;
+    printf("\n\n");
     for(int i = 0; i < MAX_RECORDS; i++)printf("city: %s, surname: %s, oldTid: %i, newTid: %i\n",\
     array[i].city, array[i].surname, array[i].oldTupleId, array[i].newTupleId);
 }
@@ -596,7 +598,7 @@ HT_ErrorCode HT_InsertEntry(int indexDesc, Record record, tid* tupleId, UpdateRe
     updateArray[i].oldTupleId=-1;
     updateArray[i].newTupleId=updateArray[i].oldTupleId;
   }
-  printRecord(record);
+  
   CALL_OR_DIE(checkInsertEntry(indexDesc, updateArray));
 
   //Initialize block

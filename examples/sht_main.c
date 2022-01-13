@@ -62,7 +62,7 @@ const char* cities[] = {
     }                         \
   }
 
-int main()
+int main(int argc, char **argv)
 {
   BF_Init(LRU);
   int indexDesc;
@@ -79,10 +79,10 @@ int main()
   SecondaryRecord secr;
   Record record;
   srand(12569874);
-  UpdateRecordArray update[SEC_MAX_RECORDS];
+  UpdateRecordArray update[MAX_RECORDS];
   int r1, r2, r3;
   printf("Insert Entries\n");
-  for (int id = 0; id < 100; ++id)
+  for (int id = 0; id < atoi(argv[1]); ++id)
   {
     tid tupleId;
 
@@ -97,21 +97,22 @@ int main()
 
     CALL_OR_DIE(HT_InsertEntry(indexDesc, record, &tupleId, update));
 
+
+
     // create a record
     secr.tupleId = tupleId;
     memcpy(secr.index_key, surnames[r2], strlen(surnames[r2]) + 1);
+    printUpdateArray(update);
+
+    if(id == (atoi(argv[1]) - 2))SHT_PrintAllEntries(sindexDesc, "surnames");
+
     CALL_OR_DIE(SHT_SecondaryInsertEntry(sindexDesc, secr));
-    //updatesht(update)
     CALL_OR_DIE(SHT_SecondaryUpdateEntry(sindexDesc,update));
   }
   
-  // printf("RUN PrintAllEntries\n");
-  // int id = rand() % RECORDS_NUM;
-  // char* str = "test";
-  CALL_OR_DIE(HT_PrintAllEntries(indexDesc, NULL));
+  // CALL_OR_DIE(HT_PrintAllEntries(indexDesc, NULL));
+  printf("\n\n");
   CALL_OR_DIE(SHT_PrintAllEntries(sindexDesc, "surnames"));
-  //CALL_OR_DIE(HashStatistics(FILE_NAME));
-  
 
   CALL_OR_DIE(HT_CloseFile(indexDesc));
   CALL_OR_DIE(SHT_CloseSecondaryIndex(sindexDesc));
