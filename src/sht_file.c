@@ -510,7 +510,7 @@ HT_ErrorCode setSecEntry(int fd, BF_Block *block, int dest_block_num, SecEntry *
 }
 
 void SHT_PrintSecHashEntry(SecHashEntry, int, int, BF_Block*);
-
+void SHT_PrintHashNode(SecHashNode node);
 /*
   block: previously initialized BF_Block pointer (does not get destroyed).
   fd: fileDesc of file we want.
@@ -518,28 +518,34 @@ void SHT_PrintSecHashEntry(SecHashEntry, int, int, BF_Block*);
 */
 HT_ErrorCode doubleSecHashTable(int fd, BF_Block *block)
 {
+  printf("enters doubleSecHashTable\n");
   SecHashEntry hashEntry;
   CALL_OR_DIE(getSecHashTable(fd, block, 1, &hashEntry));
   //double table
   int size = hashEntry.secHeader.size;
+  int maxOldNum = (size / SEC_MAX_NODES);
   size *= 2;
-  int maxOldNum = (size / SEC_MAX_NODES) + 1;
 
   SecHashEntry olds[maxOldNum];
   olds[0] = hashEntry;
-  for(int i = 1; i < maxOldNum; i++)CALL_OR_DIE(getSecHashTable(fd, block, olds[i-1].secHeader.next_hblock, olds+i));
-
+  printf("maxOldnum = %i , size = %i\n", maxOldNum, size);
+  for(int i = 1; i < maxOldNum; i++){
+    CALL_OR_DIE(getSecHashTable(fd, block, olds[i-1].secHeader.next_hblock, olds+i));
+    // SHT_PrintSecHashEntry(olds[i], 0, fd, block);
+  }
   SecHashEntry old = olds[0];
   SecHashEntry new = old;
+  
 
   int newNum, oldNum, bn, bnNext;
   newNum = oldNum = 0;
-
+  //////////////////////////////////////////////////
   for (unsigned int i = 0; i < size; i++)
   {
     //new is full
     if( (i % SEC_MAX_NODES) == 0 && i >= SEC_MAX_NODES)
     {
+      printf("\n\n\n\nhrere to save\n\n\n\n");
       //save current new block
       if(newNum == 0)bn = 1;
       else if(newNum < maxOldNum)bn = olds[newNum - 1].secHeader.next_hblock;
@@ -547,11 +553,9 @@ HT_ErrorCode doubleSecHashTable(int fd, BF_Block *block)
 
       if(newNum < maxOldNum - 1)bnNext = olds[newNum].secHeader.next_hblock;
       else CALL_BF(BF_GetBlockCounter(fd, &bnNext));
-      printf("\n\n\n\n\nbnNext = %i\n\n\n\n\n\n", bnNext);
       new.secHeader.next_hblock = bnNext;
       new.secHeader.size = SEC_MAX_NODES;
       CALL_OR_DIE(setSecHashTable(fd, block, bn, &new));
-
       //get next block
       newNum ++;
       
@@ -563,20 +567,30 @@ HT_ErrorCode doubleSecHashTable(int fd, BF_Block *block)
       }
     }
 
+    
     new.secHashNode[i - (SEC_MAX_NODES*newNum)].block_num = old.secHashNode[(i >> 1) - (SEC_MAX_NODES*oldNum)].block_num;
-    new.secHashNode[i].h_value = i;
+    new.secHashNode[i - (SEC_MAX_NODES*newNum)].h_value = i;
+    printf("for %i-th block of hash table: \n", newNum+1);
+    printf("new.secHashNode[%i] : hashValue = %i, block_num = %i\n",(i - (SEC_MAX_NODES*newNum)), new.secHashNode[i - (SEC_MAX_NODES*newNum)].h_value, new.secHashNode[i - (SEC_MAX_NODES*newNum)].block_num);
+    printf("new address = %p\n", &new);
+
   }
 
   //save last one
   new.secHeader.next_hblock = -1;
-  new.secHeader.size = size % SEC_MAX_NODES;
+  new.secHeader.size = (size % SEC_MAX_NODES == 0) ? SEC_MAX_NODES : (size % SEC_MAX_NODES);
+
+  printf("Just before exit:\n");
 
   if(newNum == 0)bn = 1;
   else if(newNum < maxOldNum)bn = olds[newNum - 1].secHeader.next_hblock;
   else CALL_OR_DIE(getNewBlock(fd, block, &bn));
-
+  printf("bn = %i, new.new_hblock = %i, new.size = %i\n", bn, new.secHeader.next_hblock, new.secHeader.size);
+  for(int i = 0; i < new.secHeader.size; i++)SHT_PrintHashNode(new.secHashNode[i]);
+    printf("new address = %p\n", &new);
+  
   CALL_OR_DIE(setSecHashTable(fd, block, bn, &new));
-
+  printf("exits\n");
   return HT_OK;
 }
 
