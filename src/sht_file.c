@@ -638,7 +638,7 @@ HT_ErrorCode SHT_SecondaryUpdateEntry(int indexDesc, UpdateRecordArray *updateAr
     
     int index = (updateArray[i].oldTupleId - ((updateArray[i].old_block_num+1)*SEC_MAX_RECORDS)); // tupleId % sec_MAX_RECORDS
     // printf("Index WITHOUT mod is %i\n",index);
-    // index = updateArray[i].oldTupleId % SEC_MAX_RECORDS;
+    index = updateArray[i].oldTupleId % SEC_MAX_RECORDS;
     // printf("Index WITH mod is %i\n",index);
     // printf("OLD INDEX:%i\n",updateArray[i].old_index);
     // int old_index=updateArray[i].old_index;
