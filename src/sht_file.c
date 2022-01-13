@@ -587,6 +587,11 @@ HT_ErrorCode SHT_SecondaryInsertEntry(int indexDesc, SecondaryRecord record)
 
 HT_ErrorCode SHT_SecondaryUpdateEntry(int indexDesc, UpdateRecordArray *updateArray)
 {
+  if(indexArray[indexDesc].used==0){
+    printf("CLOSED FILE\n");
+    return HT_ERROR;
+  }
+
   if(updateArray[0].oldTupleId==-1){
     return HT_OK;
   }
@@ -595,7 +600,6 @@ HT_ErrorCode SHT_SecondaryUpdateEntry(int indexDesc, UpdateRecordArray *updateAr
   BF_Block_Init(&block);
 
 
-  // get depth
   for(int i=0;i<SEC_MAX_RECORDS;i++){
 
     // printf("OldTupleID:%i\n",updateArray[i].oldTupleId);
@@ -628,7 +632,7 @@ HT_ErrorCode SHT_SecondaryUpdateEntry(int indexDesc, UpdateRecordArray *updateAr
     // printf("OldTupleID:%i\n",updateArray[i].oldTupleId);
     // printf("BlockN:%i\n",blockN);
     
-    int index = updateArray[i].oldTupleId - (updateArray[i].old_block_num)*SEC_MAX_RECORDS; // tupleId % sec_MAX_RECORDS
+    int index = updateArray[i].oldTupleId - (blockN)*SEC_MAX_RECORDS; // tupleId % sec_MAX_RECORDS
     printf("Index WITHOUT mod is %i\n",index);
     index = updateArray[i].oldTupleId % SEC_MAX_RECORDS;
     printf("Index WITH mod is %i\n",index);
