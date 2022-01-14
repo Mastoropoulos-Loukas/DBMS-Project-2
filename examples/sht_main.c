@@ -112,6 +112,8 @@ int main(int argc, char **argv)
   printf("\n\n");
   CALL_OR_DIE(SHT_PrintAllEntries(sindexDesc, "surnames"));
 
+  CALL_OR_DIE(SHT_HashStatistics("secondary.db"));
+
   CALL_OR_DIE(HT_CloseFile(indexDesc));
   CALL_OR_DIE(SHT_CloseSecondaryIndex(sindexDesc));
   BF_Close();

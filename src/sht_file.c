@@ -790,12 +790,64 @@ HT_ErrorCode SHT_PrintAllEntries(int sindexDesc, char *index_key)
 HT_ErrorCode SHT_HashStatistics(char *filename)
 {
   // insert code here
+  BF_Block *block;
+  BF_Block_Init(&block);
+
+  int id;
+  SHT_OpenSecondaryIndex(filename, &id);
+  int fd = secIndexArray[id].fd;
+
+  // get number of blocks
+  int nblocks;
+  CALL_BF(BF_GetBlockCounter(fd, &nblocks));
+  printf("File %s has %d blocks.\n", filename, nblocks);
+
+  // // get depth
+  int depth;
+  CALL_OR_DIE(getDepth(fd, block, &depth));
+
+  // // get hash table
+  SecHashEntry hashEntry;
+  CALL_OR_DIE(getSecHashTable(fd, block,1,&hashEntry));
+  
+  int iter = hashEntry.secHeader.size;
+  int dataN = iter;
+  int min, max, total;
+  max = total = 0;
+  min = -1;
+
+  for (int i = 0; i < iter; i++){
+    
+    int blockN = hashEntry.secHashNode[i].block_num;
+    SecEntry entry;
+    CALL_OR_DIE(getSecEntry(fd, block, blockN, &entry));
+
+    int num = entry.secHeader.size;
+    total += num;
+    if (num > max) max = num;
+    if (num < min || min == -1) min = num;
+
+    int dif = depth - entry.secHeader.local_depth;
+    i += pow(2.0, (double)dif) - 1;
+    dataN -= pow(2.0, (double)dif) - 1;
+  }
+
+  printf("Max number of records in bucket is %i\n", max);
+  printf("Min number of records in bucket is %i\n", min);
+  printf("Mean number of records in bucket is %f\n", (double)total / (double)dataN);
+
+  BF_UnpinBlock(block);
+  BF_Block_Destroy(&block);
+  SHT_CloseSecondaryIndex(id);
+
   return HT_OK;
 }
 
 HT_ErrorCode SHT_InnerJoin(int sindexDesc1, int sindexDesc2, char *index_key)
 {
   // insert code here
+
+  
   return HT_OK;
 }
 
