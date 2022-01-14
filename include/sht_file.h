@@ -91,3 +91,5 @@ HT_ErrorCode SHT_InnerJoin(
 
 void testing(char *, char *, int);
 void SHT_PrintSecHashTable(int fd, BF_Block *block, int full);
+
+unsigned int hashAttr(const char* str,int depth);

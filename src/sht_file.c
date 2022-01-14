@@ -76,6 +76,19 @@ typedef struct
 
 SecIndexNode secIndexArray[MAX_OPEN_FILES]; // πινακας μεα τα ανοικτα αρχεια δευτερευοντος ευρετηριου
 
+unsigned int hashAttr(const char* str,int depth){
+    unsigned int hash = 5381;
+    int c;
+
+    while (c = *str++)
+        hash = ((hash << 5) + hash) + c; /* hash * 33 + c */
+
+    hash = hash >> (32 - depth);
+
+    return hash;
+}
+
+
 HT_ErrorCode SHT_Init()
 {
   if (MAX_OPEN_FILES <= 0)
@@ -386,7 +399,7 @@ HT_ErrorCode reassignSecRecords(int fd, BF_Block *block, SecEntry entry, int blo
 {
   for (int i = 0; i < entry.secHeader.size; i++)
   {
-    if (hashFunction(entry.secRecord[i].tupleId, depth) <= half)
+    if (hashAttr(entry.secRecord[i].index_key, depth) <= half)
     {
       //reassign to new position in old block
       old->secRecord[old->secHeader.size] = entry.secRecord[i];
@@ -418,7 +431,7 @@ HT_ErrorCode reassignSecRecords(int fd, BF_Block *block, SecEntry entry, int blo
 HT_ErrorCode insertSecRecordAfterSplit(SecondaryRecord secondaryRecord, int depth, int half, int blockOld, int blockNew, SecEntry *old, SecEntry *new)
 {
   //store given record
-  if (hashFunction(secondaryRecord.tupleId, depth) <= half)
+  if (hashAttr(secondaryRecord.index_key, depth) <= half)
   {
     old->secRecord[old->secHeader.size] = secondaryRecord;
     // *tupleId = getTid(blockOld, old->header.size);
@@ -547,7 +560,7 @@ HT_ErrorCode SHT_SecondaryInsertEntry(int indexDesc, SecondaryRecord record)
   CALL_OR_DIE(getSecHashTable(fd, block, 1, &hashEntry));
 
   //get bucket
-  int value = hashFunction(record.tupleId, depth);
+  unsigned int value = hashAttr(record.index_key, depth);
   int blockN = getSecBucket(value, hashEntry);
 
   //get bucket's entry
@@ -621,7 +634,12 @@ HT_ErrorCode SHT_SecondaryUpdateEntry(int indexDesc, UpdateRecordArray *updateAr
     CALL_OR_DIE(getSecHashTable(fd, block, 1, &hashEntry));
 
     //get bucket
-    int value = hashFunction(updateArray[i].oldTupleId, depth);   /// Otan arxisoyme na kanoyme hash me vasi to surname/city prepei na to allaksoyme
+    int value = hashAttr(updateArray[i].surname, depth);   /// Otan arxisoyme na kanoyme hash me vasi to surname/city prepei na to allaksoyme
+    
+    if((strcmp(hashEntry.secHeader.attribute,"cities")==0) || (strcmp(hashEntry.secHeader.attribute,"city")==0)){
+      value = hashAttr(updateArray[i].city,depth);
+    }
+
     int blockN = getSecBucket(value, hashEntry);
 
     //get bucket's entry

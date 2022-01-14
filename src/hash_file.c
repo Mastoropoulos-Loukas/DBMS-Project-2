@@ -431,19 +431,12 @@ HT_ErrorCode reassignRecords(int fd, BF_Block *block, Entry entry, int blockOld,
       old->record[old->header.size] = entry.record[i];
       
       //update array
-      if(i<SEC_MAX_RECORDS){
+      if(i<MAX_RECORDS){
         strcpy(updateArray[i].city, entry.record[i].city);
         strcpy(updateArray[i].surname, entry.record[i].surname);
         updateArray[i].oldTupleId = getTid(blockOld, i);
         updateArray[i].newTupleId = getTid(blockOld, old->header.size);
         
-        // if(blockOld==getBlockNumFromTID(getTid(blockOld, i))){
-        //   printf("SMOOTH\n");
-        // }
-
-        // updateArray[i].old_block_num=blockOld;
-        // updateArray[i].old_index=i;
-        // updateArray[i].new_block_num=blockOld;
       }
       old->header.size++;  
     }
@@ -453,15 +446,12 @@ HT_ErrorCode reassignRecords(int fd, BF_Block *block, Entry entry, int blockOld,
       new->record[new->header.size] = entry.record[i];
 
       //update array
-      if(i<SEC_MAX_RECORDS){
+      if(i<MAX_RECORDS){
         strcpy(updateArray[i].city, entry.record[i].city);
         strcpy(updateArray[i].surname, entry.record[i].surname);
         updateArray[i].oldTupleId = getTid(blockOld, i);
         updateArray[i].newTupleId = getTid(blockNew, new->header.size);
 
-        // updateArray[i].old_block_num=blockOld;
-        // updateArray[i].old_index=i;
-        // updateArray[i].new_block_num=blockNew;
       }
       new->header.size++;
     }
@@ -594,7 +584,7 @@ HT_ErrorCode splitHashTable(int fd, BF_Block *block, int depth, int bucket, Reco
 HT_ErrorCode HT_InsertEntry(int indexDesc, Record record, tid* tupleId, UpdateRecordArray* updateArray)
 {
   // updateArray[0].oldTupleId=-1;
-  for(int i=0;i<SEC_MAX_RECORDS;i++){
+  for(int i=0;i<MAX_RECORDS;i++){
     updateArray[i].oldTupleId=-1;
     updateArray[i].newTupleId=updateArray[i].oldTupleId;
     strcpy(updateArray[i].city,"DUMBVILLE");
