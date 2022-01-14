@@ -15,6 +15,10 @@ typedef struct
 	int oldTupleId; // η παλια θέση της εγγραφής πριν την εισαγωγή της νέας
 	int newTupleId; // η νέα θέση της εγγραφής που μετακινήθηκε μετα την εισαγωγή της νέας εγγραφής
 
+	// int old_block_num;
+	// int old_index;
+	// int new_block_num;
+
 } UpdateRecordArray;
 
 typedef struct
@@ -28,8 +32,8 @@ IndexNode indexArray[MAX_OPEN_FILES];
 
 typedef struct
 {
-  int size;
-  int local_depth;
+	int size;
+	int local_depth;
 } DataHeader;
 
 typedef enum HT_ErrorCode
@@ -51,17 +55,21 @@ typedef struct Record
 #define MAX_RECORDS ((BF_BLOCK_SIZE - sizeof(DataHeader)) / sizeof(Record))
 #define MAX_HNODES ((BF_BLOCK_SIZE - sizeof(HashHeader)) / sizeof(HashNode))
 
-#define CALL_OR_DIE(call)     \
-  {                           \
-    HT_ErrorCode code = call; \
-    if (code != HT_OK)        \
-    {                         \
-      printf("Error\n");      \
-      exit(code);             \
-    }                         \
-  }
+typedef struct
+{
+	DataHeader header;
+	Record record[MAX_RECORDS];
+} Entry;
 
-void printUpdateArray(UpdateRecordArray * array, int size);
+#define CALL_OR_DIE(call)         \
+	{                             \
+		HT_ErrorCode code = call; \
+		if (code != HT_OK)        \
+		{                         \
+			printf("Error\n");    \
+			exit(code);           \
+		}                         \
+	}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -104,10 +112,10 @@ HT_ErrorCode HT_CloseFile(
  * Σε περίπτωση που εκτελεστεί επιτυχώς επιστρέφεται HT_OK, ενώ σε διαφορετική περίπτωση κάποιος κωδικός λάθους.
  */
 HT_ErrorCode HT_InsertEntry(
-	int indexDesc, /* θέση στον πίνακα με τα ανοιχτά αρχεία */
-	Record record,  /* δομή που προσδιορίζει την εγγραφή */
-	tid* tupleId,	/* το tuple id της καινούργιας εγγραφής*/
-	UpdateRecordArray* updateArray /* πίνακας με τις αλλαγές */
+	int indexDesc,				   /* θέση στον πίνακα με τα ανοιχτά αρχεία */
+	Record record,				   /* δομή που προσδιορίζει την εγγραφή */
+	tid *tupleId,				   /* το tuple id της καινούργιας εγγραφής*/
+	UpdateRecordArray *updateArray /* πίνακας με τις αλλαγές */
 );
 
 /*
@@ -124,14 +132,15 @@ HT_ErrorCode HT_PrintAllEntries(
  * Η συνάρτηση HashStatistics χρησιμοποιείται για την εκτύπωση στατιστικών στοιχείων
  */
 HT_ErrorCode HashStatistics(
-	char *filename
-);
+	char *filename);
 
 unsigned int hashFunction(int, int);
-HT_ErrorCode getNewBlock(int, BF_Block*, int*);
-HT_ErrorCode getDepth(int, BF_Block*, int*);
-HT_ErrorCode setDepth(int, BF_Block*, int);
-
-
+HT_ErrorCode getNewBlock(int, BF_Block *, int *);
+HT_ErrorCode getDepth(int, BF_Block *, int *);
+HT_ErrorCode setDepth(int, BF_Block *, int);
+int getBlockNumFromTID(tid);
+int getIndexFromTID(tid);
+void printUpdateArray(UpdateRecordArray *array);
+HT_ErrorCode getEntry(int, BF_Block *, int, Entry *);
 
 #endif // HASH_FILE_H
