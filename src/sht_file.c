@@ -382,7 +382,6 @@ HT_ErrorCode setSecHashTable(int fd, BF_Block *block, int block_num, SecHashEntr
   return HT_OK;
 }
 
-
 /*
   'hashEntry' : hash table.
   'bucket' : block we are interested in.
@@ -732,7 +731,6 @@ HT_ErrorCode SHT_SecondaryUpdateEntry(int indexDesc, UpdateRecordArray *updateAr
   // insert code here
   return HT_OK;
 }
-
 
 /*
   prints SecHashNodes values
