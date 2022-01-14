@@ -97,8 +97,6 @@ int main(int argc, char **argv)
 
     CALL_OR_DIE(HT_InsertEntry(indexDesc, record, &tupleId, update));
 
-
-
     // create a record
     secr.tupleId = tupleId;
     memcpy(secr.index_key, surnames[r2], strlen(surnames[r2]) + 1);
