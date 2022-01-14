@@ -595,6 +595,8 @@ HT_ErrorCode HT_InsertEntry(int indexDesc, Record record, tid* tupleId, UpdateRe
   for(int i=0;i<SEC_MAX_RECORDS;i++){
     updateArray[i].oldTupleId=-1;
     updateArray[i].newTupleId=updateArray[i].oldTupleId;
+    strcpy(updateArray[i].city,"DUMBVILLE");
+    strcpy(updateArray[i].surname,"DUMMY");
   }
   printRecord(record);
   CALL_OR_DIE(checkInsertEntry(indexDesc, updateArray));
