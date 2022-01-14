@@ -17,17 +17,10 @@
     }                         \
   }
 
-
 typedef struct
 {
   int size;
 } HashHeader;
-
-typedef struct
-{
-  DataHeader header;
-  Record record[MAX_RECORDS];
-} Entry;
 
 typedef struct
 {
@@ -41,20 +34,23 @@ typedef struct
   HashNode hashNode[MAX_HNODES];
 } HashEntry;
 
-
-tid getTid(int blockId, int index){
-  tid temp = (blockId+1)*MAX_RECORDS + index;
+tid getTid(int blockId, int index)
+{
+  tid temp = (blockId + 1) * MAX_RECORDS + index;
   return temp;
 }
 
 /*
   prints the contents of the 'array' of size 'size'
 */
-void printUpdateArray(UpdateRecordArray *array){
-    if(array[0].oldTupleId == -1)return;
-    printf("\n\n");
-    for(int i = 0; i < MAX_RECORDS; i++)printf("city: %s, surname: %s, oldTid: %i, newTid: %i\n",\
-    array[i].city, array[i].surname, array[i].oldTupleId, array[i].newTupleId);
+void printUpdateArray(UpdateRecordArray *array)
+{
+  if (array[0].oldTupleId == -1)
+    return;
+  printf("\n\n");
+  for (int i = 0; i < MAX_RECORDS; i++)
+    printf("city: %s, surname: %s, oldTid: %i, newTid: %i\n",
+           array[i].city, array[i].surname, array[i].oldTupleId, array[i].newTupleId);
 }
 
 /*
@@ -108,7 +104,7 @@ HT_ErrorCode HT_Init()
 /*
   checks the input for HT_CreateIndex.
 */
-HT_ErrorCode checkCreateIndex(const char* filename, int depth)
+HT_ErrorCode checkCreateIndex(const char *filename, int depth)
 {
   if (filename == NULL || strcmp(filename, "") == 0)
   {
@@ -146,18 +142,18 @@ HT_ErrorCode createHashTable(int fd, BF_Block *block, int depth)
   HashEntry hashEntry;
   int hashN = pow(2.0, (double)depth);
   int blockN;
-  char * data;
+  char *data;
 
-  //allocate space for the HashTable
+  // allocate space for the HashTable
   CALL_BF(BF_AllocateBlock(fd, block));
   CALL_BF(BF_UnpinBlock(block));
 
-  //set empty entry header
+  // set empty entry header
   Entry empty;
   empty.header.local_depth = depth;
   empty.header.size = 0;
 
-  //Link every hash value an empty data block
+  // Link every hash value an empty data block
   hashEntry.header.size = hashN;
   for (int i = 0; i < hashN; i++)
   {
@@ -171,7 +167,7 @@ HT_ErrorCode createHashTable(int fd, BF_Block *block, int depth)
     hashEntry.hashNode[i].block_num = blockN;
   }
 
-  //Store HashTable
+  // Store HashTable
   BF_GetBlock(fd, 1, block);
   data = BF_Block_GetData(block);
   memcpy(data, &hashEntry, sizeof(HashEntry));
@@ -187,21 +183,21 @@ HT_ErrorCode HT_CreateIndex(const char *filename, int depth)
   CALL_BF(BF_CreateFile(filename));
   // printf("Name given : %s, max depth : %i\n", filename, depth);
 
-  //initialize block
+  // initialize block
   BF_Block *block;
   BF_Block_Init(&block);
 
-  //open file
+  // open file
   int id;
   HT_OpenIndex(filename, &id);
   int fd = indexArray[id].fd;
   strcpy(indexArray[id].filename, filename);
 
-  //Create Info block and HashTable
+  // Create Info block and HashTable
   CALL_OR_DIE(createInfoBlock(fd, block, depth));
   CALL_OR_DIE(createHashTable(fd, block, depth));
 
-  //destroy block
+  // destroy block
   BF_Block_Destroy(&block);
   // printf("File was not created before\n");
   HT_CloseFile(id);
@@ -223,7 +219,7 @@ HT_ErrorCode HT_OpenIndex(const char *fileName, int *indexDesc)
       break;
     }
   }
-  
+
   // if table is full return error
   if (found == 0)
   {
@@ -367,7 +363,7 @@ HT_ErrorCode setHashTable(int fd, BF_Block *block, HashEntry *hashEntry)
 */
 HT_ErrorCode getEndPoints(int *first, int *half, int *end, int local_depth, int depth, int bucket, HashEntry hashEntry)
 {
-  //int local_depth = entry.header.local_depth;
+  // int local_depth = entry.header.local_depth;
   int dif = depth - local_depth;
   int numOfHashes = pow(2.0, (double)dif);
   for (int pos = 0; pos < hashEntry.header.size; pos++)
@@ -392,7 +388,7 @@ HT_ErrorCode getNewBlock(int fd, BF_Block *block, int *block_num)
   BF_GetBlockCounter(fd, block_num);
   CALL_BF(BF_AllocateBlock(fd, block));
   CALL_BF(BF_UnpinBlock(block));
-  
+
   return HT_OK;
 }
 
@@ -411,13 +407,15 @@ HT_ErrorCode getNewBlock(int fd, BF_Block *block, int *block_num)
   updateArray: the array we stores record updates.
 */
 
-int getBlockNumFromTID(tid td){
+int getBlockNumFromTID(tid td)
+{
 
   return (td / MAX_RECORDS) - 1;
 }
 
-int getIndexFromTID(tid td){
-  
+int getIndexFromTID(tid td)
+{
+
   return td % MAX_RECORDS;
 }
 
@@ -427,31 +425,31 @@ HT_ErrorCode reassignRecords(int fd, BF_Block *block, Entry entry, int blockOld,
   {
     if (hashFunction(entry.record[i].id, depth) <= half)
     {
-      //reassign to new position in old block
+      // reassign to new position in old block
       old->record[old->header.size] = entry.record[i];
-      
-      //update array
-      if(i<MAX_RECORDS){
+
+      // update array
+      if (i < MAX_RECORDS)
+      {
         strcpy(updateArray[i].city, entry.record[i].city);
         strcpy(updateArray[i].surname, entry.record[i].surname);
         updateArray[i].oldTupleId = getTid(blockOld, i);
         updateArray[i].newTupleId = getTid(blockOld, old->header.size);
-        
       }
-      old->header.size++;  
+      old->header.size++;
     }
     else
     {
       // assign to new block
       new->record[new->header.size] = entry.record[i];
 
-      //update array
-      if(i<MAX_RECORDS){
+      // update array
+      if (i < MAX_RECORDS)
+      {
         strcpy(updateArray[i].city, entry.record[i].city);
         strcpy(updateArray[i].surname, entry.record[i].surname);
         updateArray[i].oldTupleId = getTid(blockOld, i);
         updateArray[i].newTupleId = getTid(blockNew, new->header.size);
-
       }
       new->header.size++;
     }
@@ -474,7 +472,7 @@ HT_ErrorCode reassignRecords(int fd, BF_Block *block, Entry entry, int blockOld,
 */
 HT_ErrorCode insertRecordAfterSplit(Record record, int depth, int half, tid *tupleId, int blockOld, int blockNew, Entry *old, Entry *new)
 {
-  //store given record
+  // store given record
   if (hashFunction(record.id, depth) <= half)
   {
     old->record[old->header.size] = record;
@@ -498,7 +496,8 @@ HT_ErrorCode insertRecordAfterSplit(Record record, int depth, int half, tid *tup
   dest_block_num: block_num of the block we are storing Entry at.
   entry: the Entry.
 */
-HT_ErrorCode setEntry(int fd, BF_Block *block, int dest_block_num, Entry *entry){
+HT_ErrorCode setEntry(int fd, BF_Block *block, int dest_block_num, Entry *entry)
+{
   CALL_BF(BF_GetBlock(fd, dest_block_num, block));
   char *data = BF_Block_GetData(block);
   memcpy(data, entry, sizeof(Entry));
@@ -515,7 +514,7 @@ HT_ErrorCode setEntry(int fd, BF_Block *block, int dest_block_num, Entry *entry)
 */
 HT_ErrorCode doubleHashTable(int fd, BF_Block *block, HashEntry *hashEntry)
 {
-  //double table
+  // double table
   HashEntry new = (*hashEntry);
   new.header.size = (*hashEntry).header.size * 2;
   for (unsigned int i = 0; i < new.header.size; i++)
@@ -524,7 +523,7 @@ HT_ErrorCode doubleHashTable(int fd, BF_Block *block, HashEntry *hashEntry)
     new.hashNode[i].value = i;
   }
 
-  //update changes in disk and memory
+  // update changes in disk and memory
   CALL_OR_DIE(setHashTable(fd, block, &new));
   (*hashEntry) = new;
   return HT_OK;
@@ -541,18 +540,18 @@ HT_ErrorCode doubleHashTable(int fd, BF_Block *block, HashEntry *hashEntry)
   updateArray: the array we are storing records' updates.
   entry: the Entry of the block before it splitted.
 */
-HT_ErrorCode splitHashTable(int fd, BF_Block *block, int depth, int bucket, Record record, tid *tupleId, UpdateRecordArray *updateArray , Entry entry)
+HT_ErrorCode splitHashTable(int fd, BF_Block *block, int depth, int bucket, Record record, tid *tupleId, UpdateRecordArray *updateArray, Entry entry)
 {
-  //get HashTable
+  // get HashTable
   HashEntry hashEntry;
   CALL_OR_DIE(getHashTable(fd, block, &hashEntry));
 
-  //get end points
+  // get end points
   int local_depth = entry.header.local_depth;
   int first, half, end;
   CALL_OR_DIE(getEndPoints(&first, &half, &end, local_depth, depth, bucket, hashEntry));
 
-  //get a new block
+  // get a new block
   int blockNew;
   CALL_OR_DIE(getNewBlock(fd, block, &blockNew));
 
@@ -567,50 +566,51 @@ HT_ErrorCode splitHashTable(int fd, BF_Block *block, int depth, int bucket, Reco
   for (int i = half + 1; i <= end; i++)
     hashEntry.hashNode[i].block_num = blockNew;
 
-  //update HashTable and re-assing records
+  // update HashTable and re-assing records
   CALL_OR_DIE(setHashTable(fd, block, &hashEntry));
   CALL_OR_DIE(reassignRecords(fd, block, entry, bucket, blockNew, half, depth, updateArray, &old, &new));
 
-  //insert new record (after splitting)
+  // insert new record (after splitting)
   CALL_OR_DIE(insertRecordAfterSplit(record, depth, half, tupleId, bucket, blockNew, &old, &new));
 
-  //store created/modified entries
+  // store created/modified entries
   CALL_OR_DIE(setEntry(fd, block, bucket, &old));
   CALL_OR_DIE(setEntry(fd, block, blockNew, &new));
 
   return HT_OK;
 }
 
-HT_ErrorCode HT_InsertEntry(int indexDesc, Record record, tid* tupleId, UpdateRecordArray* updateArray)
+HT_ErrorCode HT_InsertEntry(int indexDesc, Record record, tid *tupleId, UpdateRecordArray *updateArray)
 {
   // updateArray[0].oldTupleId=-1;
-  for(int i=0;i<MAX_RECORDS;i++){
-    updateArray[i].oldTupleId=-1;
-    updateArray[i].newTupleId=updateArray[i].oldTupleId;
-    strcpy(updateArray[i].city,"DUMBVILLE");
-    strcpy(updateArray[i].surname,"DUMMY");
+  for (int i = 0; i < MAX_RECORDS; i++)
+  {
+    updateArray[i].oldTupleId = -1;
+    updateArray[i].newTupleId = updateArray[i].oldTupleId;
+    strcpy(updateArray[i].city, "DUMBVILLE");
+    strcpy(updateArray[i].surname, "DUMMY");
   }
-  
+
   CALL_OR_DIE(checkInsertEntry(indexDesc, updateArray));
 
-  //Initialize block
+  // Initialize block
   BF_Block *block;
   BF_Block_Init(&block);
-  
+
   // get depth
   int depth;
   int fd = indexArray[indexDesc].fd;
   CALL_OR_DIE(getDepth(fd, block, &depth));
 
-  //get HashTable
-  HashEntry hashEntry;  
+  // get HashTable
+  HashEntry hashEntry;
   CALL_OR_DIE(getHashTable(fd, block, &hashEntry));
 
-  //get bucket
+  // get bucket
   int value = hashFunction(record.id, depth);
   int blockN = getBucket(value, hashEntry);
 
-  //get bucket's entry
+  // get bucket's entry
   Entry entry;
   CALL_OR_DIE(getEntry(fd, block, blockN, &entry));
 
@@ -626,22 +626,22 @@ HT_ErrorCode HT_InsertEntry(int indexDesc, Record record, tid* tupleId, UpdateRe
     // check local depth
     if (local_depth == depth)
     {
-      //double HashTable
+      // double HashTable
       CALL_OR_DIE(doubleHashTable(fd, block, &hashEntry));
       depth++;
       CALL_OR_DIE(setDepth(fd, block, depth));
     }
-    //spit hashTable's pointers
+    // spit hashTable's pointers
     CALL_OR_DIE(splitHashTable(fd, block, depth, blockN, record, tupleId, updateArray, entry));
     return HT_OK;
   }
 
-  //space available
+  // space available
   CALL_OR_DIE(getEntry(fd, block, blockN, &entry));
 
-  //insert new record (whithout splitting)
+  // insert new record (whithout splitting)
   entry.record[entry.header.size] = record;
-  *tupleId  = getTid(blockN, entry.header.size);
+  *tupleId = getTid(blockN, entry.header.size);
   // printf("block_num = %i, index = %i, tid = %i\n", blockN, entry.header.size, *tupleId);
   (entry.header.size)++;
 
@@ -676,14 +676,14 @@ HT_ErrorCode printAllRecords(int fd, BF_Block *block, int depth, HashEntry hashE
   {
     int blockN = hashEntry.hashNode[i].block_num;
     printf("Records with hash value %i (block_num = %i)\n", i, blockN);
-    
+
     // print all records
     Entry entry;
     CALL_OR_DIE(getEntry(fd, block, blockN, &entry));
     for (int i = 0; i < entry.header.size; i++)
       printRecord(entry.record[i]);
 
-    //skip hash values that point to the same block
+    // skip hash values that point to the same block
     int dif = depth - entry.header.local_depth;
     i += pow(2.0, (double)dif) - 1;
   }
@@ -703,8 +703,8 @@ HT_ErrorCode printSepcificRecord(int fd, BF_Block *block, int id, int depth, Has
   int value = hashFunction(id, depth);
   int blockN = getBucket(value, hashEntry);
 
-  //check if block was allocated
-  if(blockN == 0)
+  // check if block was allocated
+  if (blockN == 0)
   {
     printf("Block was not allocated\n");
     return HT_ERROR;
@@ -737,8 +737,10 @@ HT_ErrorCode HT_PrintAllEntries(int indexDesc, int *id)
   CALL_OR_DIE(getHashTable(fd, block, &hashEntry));
 
   HT_ErrorCode htCode;
-  if (id == NULL) htCode = printAllRecords(fd, block, depth, hashEntry);
-  else htCode = printSepcificRecord(fd, block, (*id), depth, hashEntry);
+  if (id == NULL)
+    htCode = printAllRecords(fd, block, depth, hashEntry);
+  else
+    htCode = printSepcificRecord(fd, block, (*id), depth, hashEntry);
 
   BF_Block_Destroy(&block);
   return htCode;
@@ -779,8 +781,10 @@ HT_ErrorCode HashStatistics(char *filename)
 
     int num = entry.header.size;
     total += num;
-    if (num > max) max = num;
-    if (num < min || min == -1) min = num;
+    if (num > max)
+      max = num;
+    if (num < min || min == -1)
+      min = num;
 
     int dif = depth - entry.header.local_depth;
     i += pow(2.0, (double)dif) - 1;

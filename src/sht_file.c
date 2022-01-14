@@ -46,8 +46,8 @@ typedef struct
 {
   int fd;
   int used;
+  char primary_name[255];
 } SecIndexNode;
-
 
 typedef struct
 {
@@ -76,18 +76,18 @@ typedef struct
 
 SecIndexNode secIndexArray[MAX_OPEN_FILES]; // πινακας μεα τα ανοικτα αρχεια δευτερευοντος ευρετηριου
 
-unsigned int hashAttr(const char* str,int depth){
-    unsigned int hash = 5381;
-    int c;
+unsigned int hashAttr(const char *str, int depth)
+{
+  unsigned int hash = 5381;
+  int c;
 
-    while (c = *str++)
-        hash = ((hash << 5) + hash) + c; /* hash * 33 + c */
+  while (c = *str++)
+    hash = ((hash << 5) + hash) + c; /* hash * 33 + c */
 
-    hash = hash >> (32 - depth);
+  hash = hash >> (32 - depth);
 
-    return hash;
+  return hash;
 }
-
 
 HT_ErrorCode SHT_Init()
 {
@@ -155,7 +155,8 @@ HT_ErrorCode checkShtCreate(const char *sfileName, char *attrName, int attrLengt
 HT_ErrorCode primaryExists(char *fileName)
 {
   for (int i = 0; i < MAX_OPEN_FILES; i++)
-    if (strcmp(indexArray[i].filename, fileName) == 0) return HT_OK;
+    if (strcmp(indexArray[i].filename, fileName) == 0)
+      return HT_OK;
 
   return HT_ERROR;
 }
@@ -178,25 +179,25 @@ HT_ErrorCode createSecInfoBlock(int sfd, BF_Block *block, int depth)
   block: previously initialized BF_Block pointer (does not get destroyed)
   allocates and stores to the second block of the file with fileDesc 'sfd', a HashTable with 2^'depht' values.
 */
-HT_ErrorCode createSecHashTable(int sfd, BF_Block *block, int depth, char* attrName)
+HT_ErrorCode createSecHashTable(int sfd, BF_Block *block, int depth, char *attrName)
 {
   SecHashEntry secHashEntry;
   int hashN = pow(2.0, (double)depth);
   secHashEntry.secHeader.next_hblock = -1;
   strcpy(secHashEntry.secHeader.attribute, attrName);
   int blockN;
-  char * data;
+  char *data;
 
-  //allocate space for the HashTable
+  // allocate space for the HashTable
   CALL_BF(BF_AllocateBlock(sfd, block));
   CALL_BF(BF_UnpinBlock(block));
 
-  //set empty entry header
+  // set empty entry header
   SecEntry empty;
   empty.secHeader.local_depth = depth;
   empty.secHeader.size = 0;
 
-  //Link every hash value an empty data block
+  // Link every hash value an empty data block
   secHashEntry.secHeader.size = hashN;
   for (int i = 0; i < hashN; i++)
   {
@@ -210,7 +211,7 @@ HT_ErrorCode createSecHashTable(int sfd, BF_Block *block, int depth, char* attrN
     secHashEntry.secHashNode[i].block_num = blockN;
   }
 
-  //Store HashTable
+  // Store HashTable
   BF_GetBlock(sfd, 1, block);
   data = BF_Block_GetData(block);
   memcpy(data, &secHashEntry, sizeof(SecHashEntry));
@@ -234,8 +235,9 @@ HT_ErrorCode SHT_CreateSecondaryIndex(const char *sfileName, char *attrName, int
   int id;
   SHT_OpenSecondaryIndex(sfileName, &id);
   int sfd = secIndexArray[id].fd;
+  memcpy(secIndexArray[id].primary_name, fileName, strlen(fileName));
 
-  //create info block and sec hash table
+  // create info block and sec hash table
   CALL_OR_DIE(createSecInfoBlock(sfd, block, depth));
   CALL_OR_DIE(createSecHashTable(sfd, block, depth, attrName));
 
@@ -285,7 +287,7 @@ HT_ErrorCode SHT_CloseSecondaryIndex(int indexDesc)
   int fd = secIndexArray[indexDesc].fd;
   secIndexArray[indexDesc].used = 0;
   CALL_BF(BF_CloseFile(fd));
-  //printf("Secondary index closed!\n");
+  // printf("Secondary index closed!\n");
   return HT_OK;
 }
 
@@ -293,7 +295,7 @@ HT_ErrorCode SHT_CloseSecondaryIndex(int indexDesc)
   block: previously initialized BF_Block pointer (does not get destroyed)
   stores the HashTable from file with fileDesc 'fd', at 'block_num' to 'hashEntry' variable.
 */
-HT_ErrorCode getSecHashTable(int fd, BF_Block *block,int block_num, SecHashEntry *hashEntry)
+HT_ErrorCode getSecHashTable(int fd, BF_Block *block, int block_num, SecHashEntry *hashEntry)
 {
   CALL_BF(BF_GetBlock(fd, block_num, block));
   char *data = BF_Block_GetData(block);
@@ -324,7 +326,7 @@ HT_ErrorCode checkSecInsertEntry(int indexDesc, SecondaryRecord record)
     printf("Trying to insert into a closed file!\n");
     return HT_ERROR;
   }
-  
+
   return HT_OK;
 }
 
@@ -366,7 +368,7 @@ HT_ErrorCode setSecHashTable(int fd, BF_Block *block, int block_num, SecHashEntr
 */
 HT_ErrorCode getSecEndPoints(int *first, int *half, int *end, int local_depth, int depth, int bucket, SecHashEntry hashEntry)
 {
-  //int local_depth = entry.header.local_depth;
+  // int local_depth = entry.header.local_depth;
   int dif = depth - local_depth;
   int numOfHashes = pow(2.0, (double)dif);
   for (int pos = 0; pos < hashEntry.secHeader.size; pos++)
@@ -401,9 +403,9 @@ HT_ErrorCode reassignSecRecords(int fd, BF_Block *block, SecEntry entry, int blo
   {
     if (hashAttr(entry.secRecord[i].index_key, depth) <= half)
     {
-      //reassign to new position in old block
+      // reassign to new position in old block
       old->secRecord[old->secHeader.size] = entry.secRecord[i];
-      old->secHeader.size++;  
+      old->secHeader.size++;
     }
     else
     {
@@ -430,7 +432,7 @@ HT_ErrorCode reassignSecRecords(int fd, BF_Block *block, SecEntry entry, int blo
 */
 HT_ErrorCode insertSecRecordAfterSplit(SecondaryRecord secondaryRecord, int depth, int half, int blockOld, int blockNew, SecEntry *old, SecEntry *new)
 {
-  //store given record
+  // store given record
   if (hashAttr(secondaryRecord.index_key, depth) <= half)
   {
     old->secRecord[old->secHeader.size] = secondaryRecord;
@@ -454,7 +456,8 @@ HT_ErrorCode insertSecRecordAfterSplit(SecondaryRecord secondaryRecord, int dept
   dest_block_num: block_num of the block we are storing Entry at.
   entry: the Entry.
 */
-HT_ErrorCode setSecEntry(int fd, BF_Block *block, int dest_block_num, SecEntry *entry){
+HT_ErrorCode setSecEntry(int fd, BF_Block *block, int dest_block_num, SecEntry *entry)
+{
   CALL_BF(BF_GetBlock(fd, dest_block_num, block));
   char *data = BF_Block_GetData(block);
   memcpy(data, entry, sizeof(SecEntry));
@@ -471,7 +474,7 @@ HT_ErrorCode setSecEntry(int fd, BF_Block *block, int dest_block_num, SecEntry *
 */
 HT_ErrorCode doubleSecHashTable(int fd, BF_Block *block, SecHashEntry *hashEntry)
 {
-  //double table
+  // double table
   SecHashEntry new = (*hashEntry);
   new.secHeader.size = (*hashEntry).secHeader.size * 2;
   for (unsigned int i = 0; i < new.secHeader.size; i++)
@@ -480,7 +483,7 @@ HT_ErrorCode doubleSecHashTable(int fd, BF_Block *block, SecHashEntry *hashEntry
     new.secHashNode[i].h_value = i;
   }
 
-  //update changes in disk and memory
+  // update changes in disk and memory
   CALL_OR_DIE(setSecHashTable(fd, block, 1, &new));
   (*hashEntry) = new;
   return HT_OK;
@@ -499,16 +502,16 @@ HT_ErrorCode doubleSecHashTable(int fd, BF_Block *block, SecHashEntry *hashEntry
 */
 HT_ErrorCode splitSecHashTable(int fd, BF_Block *block, int depth, int bucket, SecondaryRecord record, SecEntry entry)
 {
-  //get HashTable
+  // get HashTable
   SecHashEntry hashEntry;
   CALL_OR_DIE(getSecHashTable(fd, block, 1, &hashEntry));
 
-  //get end points
+  // get end points
   int local_depth = entry.secHeader.local_depth;
   int first, half, end;
   CALL_OR_DIE(getSecEndPoints(&first, &half, &end, local_depth, depth, bucket, hashEntry));
 
-  //get a new block
+  // get a new block
   int blockNew;
   CALL_OR_DIE(getNewBlock(fd, block, &blockNew));
 
@@ -523,22 +526,19 @@ HT_ErrorCode splitSecHashTable(int fd, BF_Block *block, int depth, int bucket, S
   for (int i = half + 1; i <= end; i++)
     hashEntry.secHashNode[i].block_num = blockNew;
 
-  //update HashTable and re-assing records
+  // update HashTable and re-assing records
   CALL_OR_DIE(setSecHashTable(fd, block, 1, &hashEntry));
   CALL_OR_DIE(reassignSecRecords(fd, block, entry, bucket, blockNew, half, depth, &old, &new));
 
-  //insert new record (after splitting)
+  // insert new record (after splitting)
   CALL_OR_DIE(insertSecRecordAfterSplit(record, depth, half, bucket, blockNew, &old, &new));
 
-  //store created/modified entries
+  // store created/modified entries
   CALL_OR_DIE(setSecEntry(fd, block, bucket, &old));
   CALL_OR_DIE(setSecEntry(fd, block, blockNew, &new));
 
   return HT_OK;
 }
-
-
-
 
 HT_ErrorCode SHT_SecondaryInsertEntry(int indexDesc, SecondaryRecord record)
 {
@@ -546,24 +546,24 @@ HT_ErrorCode SHT_SecondaryInsertEntry(int indexDesc, SecondaryRecord record)
   // printSecRecord(record);
   CALL_OR_DIE(checkSecInsertEntry(indexDesc, record));
 
-  //Initialize block
+  // Initialize block
   BF_Block *block;
   BF_Block_Init(&block);
-  
+
   // get depth
   int depth;
   int fd = secIndexArray[indexDesc].fd;
   CALL_OR_DIE(getDepth(fd, block, &depth));
 
-  //get HashTable
-  SecHashEntry hashEntry;  
+  // get HashTable
+  SecHashEntry hashEntry;
   CALL_OR_DIE(getSecHashTable(fd, block, 1, &hashEntry));
 
-  //get bucket
+  // get bucket
   unsigned int value = hashAttr(record.index_key, depth);
   int blockN = getSecBucket(value, hashEntry);
 
-  //get bucket's entry
+  // get bucket's entry
   SecEntry entry;
   CALL_OR_DIE(getSecEntry(fd, block, blockN, &entry));
 
@@ -579,20 +579,20 @@ HT_ErrorCode SHT_SecondaryInsertEntry(int indexDesc, SecondaryRecord record)
     // check local depth
     if (local_depth == depth)
     {
-      //double HashTable
+      // double HashTable
       CALL_OR_DIE(doubleSecHashTable(fd, block, &hashEntry));
       depth++;
       CALL_OR_DIE(setDepth(fd, block, depth));
     }
-    //spit hashTable's pointers
+    // spit hashTable's pointers
     CALL_OR_DIE(splitSecHashTable(fd, block, depth, blockN, record, entry));
     return HT_OK;
   }
 
-  //space available
+  // space available
   CALL_OR_DIE(getSecEntry(fd, block, blockN, &entry));
 
-  //insert new record (whithout splitting)
+  // insert new record (whithout splitting)
   entry.secRecord[entry.secHeader.size] = record;
   // *tupleId  = getTid(blockN, entry.header.size);
   (entry.secHeader.size)++;
@@ -603,25 +603,28 @@ HT_ErrorCode SHT_SecondaryInsertEntry(int indexDesc, SecondaryRecord record)
 
 HT_ErrorCode SHT_SecondaryUpdateEntry(int indexDesc, UpdateRecordArray *updateArray)
 {
-  if(indexArray[indexDesc].used==0){
+  if (indexArray[indexDesc].used == 0)
+  {
     printf("CLOSED FILE\n");
     return HT_ERROR;
   }
 
-  if(updateArray[0].oldTupleId==-1){
+  if (updateArray[0].oldTupleId == -1)
+  {
     return HT_OK;
   }
 
   // printUpdateArray(updateArray);
 
   // insert code here
-  BF_Block* block;
+  BF_Block *block;
   BF_Block_Init(&block);
 
+  for (int i = 0; i < MAX_RECORDS; i++)
+  {
 
-  for(int i=0;i<MAX_RECORDS;i++){
-
-    if(updateArray[i].oldTupleId==updateArray[i].newTupleId){
+    if (updateArray[i].oldTupleId == updateArray[i].newTupleId)
+    {
       continue;
     }
 
@@ -629,29 +632,31 @@ HT_ErrorCode SHT_SecondaryUpdateEntry(int indexDesc, UpdateRecordArray *updateAr
     int fd = secIndexArray[indexDesc].fd;
     CALL_OR_DIE(getDepth(fd, block, &depth));
 
-    //get HashTable
-    SecHashEntry hashEntry;  
+    // get HashTable
+    SecHashEntry hashEntry;
     CALL_OR_DIE(getSecHashTable(fd, block, 1, &hashEntry));
 
-    //get bucket
-    int value = hashAttr(updateArray[i].surname, depth);   /// Otan arxisoyme na kanoyme hash me vasi to surname/city prepei na to allaksoyme
-    
-    if((strcmp(hashEntry.secHeader.attribute,"cities")==0) || (strcmp(hashEntry.secHeader.attribute,"city")==0)){
-      value = hashAttr(updateArray[i].city,depth);
+    // get bucket
+    int value = hashAttr(updateArray[i].surname, depth); /// Otan arxisoyme na kanoyme hash me vasi to surname/city prepei na to allaksoyme
+
+    if ((strcmp(hashEntry.secHeader.attribute, "cities") == 0) || (strcmp(hashEntry.secHeader.attribute, "city") == 0))
+    {
+      value = hashAttr(updateArray[i].city, depth);
     }
 
     int blockN = getSecBucket(value, hashEntry);
 
-    //get bucket's entry
+    // get bucket's entry
     SecEntry entry;
     CALL_OR_DIE(getSecEntry(fd, block, blockN, &entry));
- 
-    for(int j=0;j<entry.secHeader.size;j++){
-      if(entry.secRecord[j].tupleId==updateArray[i].oldTupleId){
-        entry.secRecord[j].tupleId=updateArray[i].newTupleId;
+
+    for (int j = 0; j < entry.secHeader.size; j++)
+    {
+      if (entry.secRecord[j].tupleId == updateArray[i].oldTupleId)
+      {
+        entry.secRecord[j].tupleId = updateArray[i].newTupleId;
       }
     }
-
 
     CALL_OR_DIE(setSecEntry(fd, block, blockN, &entry));
   }
@@ -659,7 +664,6 @@ HT_ErrorCode SHT_SecondaryUpdateEntry(int indexDesc, UpdateRecordArray *updateAr
   BF_Block_Destroy(&block);
   return HT_OK;
 }
-
 
 /*
   prints SecHashNodes values
@@ -683,7 +687,8 @@ void SHT_PrintSecondaryRecord(SecondaryRecord record)
 void SHT_PrintSecEntry(SecEntry entry)
 {
   printf("local_depth = %i\n", entry.secHeader.local_depth);
-  for(int i = 0; i < entry.secHeader.size; i++)SHT_PrintSecondaryRecord(entry.secRecord[i]);
+  for (int i = 0; i < entry.secHeader.size; i++)
+    SHT_PrintSecondaryRecord(entry.secRecord[i]);
 }
 
 /*
@@ -696,11 +701,12 @@ void SHT_PrintSecHashEntry(SecHashEntry hEntry, int full, int fd, BF_Block *bloc
 {
   SecEntry entry;
 
-  for(int i = 0; i < hEntry.secHeader.size; i++)
+  for (int i = 0; i < hEntry.secHeader.size; i++)
   {
-    if(full)printf("\n");
+    if (full)
+      printf("\n");
     SHT_PrintHashNode(hEntry.secHashNode[i]);
-    if(full == 1)
+    if (full == 1)
     {
       int bn = hEntry.secHashNode[i].block_num;
       printf("Secondary Entry with block_num = %i\n", bn);
@@ -721,7 +727,7 @@ void SHT_PrintSecHashTable(int fd, BF_Block *block, int full)
   SecHashEntry table;
   int block_num;
 
-  block_num = 1;  //get start of hash table first
+  block_num = 1; // get start of hash table first
 
   do
   {
@@ -731,7 +737,6 @@ void SHT_PrintSecHashTable(int fd, BF_Block *block, int full)
     SHT_PrintSecHashEntry(table, full, fd, block);
   } while (block_num != -1);
 }
-
 
 /*
   Prints all records in a file.
@@ -746,7 +751,7 @@ HT_ErrorCode printAllSecRecords(int fd, BF_Block *block, int depth, SecHashEntry
   // {
   //   int blockN = hashEntry.secHashNode[i].block_num;
   //   printf("Records with hash value %i (block_num = %i)\n", i, blockN);
-    
+
   //   // print all records
   //   SecEntry entry;
   //   CALL_OR_DIE(getSecEntry(fd, block, blockN, &entry));
@@ -779,8 +784,8 @@ HT_ErrorCode SHT_PrintAllEntries(int sindexDesc, char *index_key)
   CALL_OR_DIE(getSecHashTable(fd, block, 1, &hashEntry));
 
   HT_ErrorCode htCode;
-  //if (id == NULL) 
-    htCode = printAllSecRecords(fd, block, depth, hashEntry);
+  // if (id == NULL)
+  htCode = printAllSecRecords(fd, block, depth, hashEntry);
   // else htCode = printSepcificRecord(fd, block, (*id), depth, hashEntry);
 
   BF_Block_Destroy(&block);
@@ -808,24 +813,27 @@ HT_ErrorCode SHT_HashStatistics(char *filename)
 
   // // get hash table
   SecHashEntry hashEntry;
-  CALL_OR_DIE(getSecHashTable(fd, block,1,&hashEntry));
-  
+  CALL_OR_DIE(getSecHashTable(fd, block, 1, &hashEntry));
+
   int iter = hashEntry.secHeader.size;
   int dataN = iter;
   int min, max, total;
   max = total = 0;
   min = -1;
 
-  for (int i = 0; i < iter; i++){
-    
+  for (int i = 0; i < iter; i++)
+  {
+
     int blockN = hashEntry.secHashNode[i].block_num;
     SecEntry entry;
     CALL_OR_DIE(getSecEntry(fd, block, blockN, &entry));
 
     int num = entry.secHeader.size;
     total += num;
-    if (num > max) max = num;
-    if (num < min || min == -1) min = num;
+    if (num > max)
+      max = num;
+    if (num < min || min == -1)
+      min = num;
 
     int dif = depth - entry.secHeader.local_depth;
     i += pow(2.0, (double)dif) - 1;
@@ -845,9 +853,136 @@ HT_ErrorCode SHT_HashStatistics(char *filename)
 
 HT_ErrorCode SHT_InnerJoin(int sindexDesc1, int sindexDesc2, char *index_key)
 {
-  // insert code here
+  printf("This is InnerJoin! I recieved %d, %d and %s.\n", sindexDesc1, sindexDesc2, index_key);
 
-  
+  // initialize blocks
+  BF_Block *block1;
+  BF_Block_Init(&block1);
+
+  BF_Block *block2;
+  BF_Block_Init(&block2);
+
+  // get secondary indexes
+  int fd1 = secIndexArray[sindexDesc1].fd;
+  int depth1;
+  CALL_OR_DIE(getDepth(fd1, block1, &depth1));
+  SecHashEntry hashEntry1;
+  CALL_OR_DIE(getSecHashTable(fd1, block1, 1, &hashEntry1));
+
+  int fd2 = secIndexArray[sindexDesc2].fd;
+  int depth2;
+  CALL_OR_DIE(getDepth(fd2, block2, &depth2));
+  SecHashEntry hashEntry2;
+  CALL_OR_DIE(getSecHashTable(fd2, block2, 1, &hashEntry2));
+
+  // get corresponding primary indexes
+  int pid1;
+  HT_OpenIndex(secIndexArray[sindexDesc1].primary_name, &pid1);
+  int pid2;
+  HT_OpenIndex(secIndexArray[sindexDesc2].primary_name, &pid2);
+  int pfd1 = indexArray[pid1].fd;
+  int pfd2 = indexArray[pid2].fd;
+
+  BF_Block *block3;
+  BF_Block_Init(&block3);
+
+  BF_Block *block4;
+  BF_Block_Init(&block4);
+
+  // if key is NULL print all records of join
+  if (index_key == NULL)
+  {
+    for (int i = 0; i < hashEntry1.secHeader.size; i++)
+    {
+      int blockN1 = hashEntry1.secHashNode[i].block_num;
+      SecEntry entry1;
+      CALL_OR_DIE(getSecEntry(fd1, block1, blockN1, &entry1));
+
+      for (int j = 0; j < entry1.secHeader.size; j++)
+      {
+        for (int z = 0; z < hashEntry2.secHeader.size; z++)
+        {
+          int blockN2 = hashEntry2.secHashNode[z].block_num;
+          SecEntry entry2;
+          CALL_OR_DIE(getSecEntry(fd2, block2, blockN2, &entry2));
+
+          for (int w = 0; w < entry2.secHeader.size; w++)
+          {
+            if (strcmp(entry1.secRecord[j].index_key, entry2.secRecord[w].index_key) == 0)
+            {
+              int block_num1 = getBlockNumFromTID(entry1.secRecord[j].tupleId);
+              int index_in_block1 = getIndexFromTID(entry1.secRecord[j].tupleId);
+              int block_num2 = getBlockNumFromTID(entry2.secRecord[j].tupleId);
+              int index_in_block2 = getIndexFromTID(entry2.secRecord[j].tupleId);
+
+              Entry pentry1;
+              Entry pentry2;
+              CALL_OR_DIE(getEntry(pfd1, block3, block_num1, &pentry1));
+              CALL_OR_DIE(getEntry(pfd2, block4, block_num2, &pentry2));
+
+              if (strcmp(hashEntry1.secHeader.attribute, "surnames") == 0)
+              {
+                printf("%s, %d, %s, %s, ", entry1.secRecord[j].index_key, entry1.secRecord[j].tupleId, pentry1.record->name, pentry1.record->city);
+                printf("%d, %s, %s\n", entry2.secRecord[j].tupleId, pentry2.record->name, pentry2.record->city);
+              }
+              else
+              {
+                printf("%s, %d, %s, %s, ", entry1.secRecord[j].index_key, entry1.secRecord[j].tupleId, pentry1.record->name, pentry1.record->surname);
+                printf("%d, %s, %s\n", entry2.secRecord[j].tupleId, pentry2.record->name, pentry2.record->surname);
+              }
+            }
+          }
+          // skip hash values that point to the same block
+          int dif2 = depth2 - entry2.secHeader.local_depth;
+          z += pow(2.0, (double)dif2) - 1;
+        }
+      }
+      // skip hash values that point to the same block
+      int dif1 = depth1 - entry1.secHeader.local_depth;
+      i += pow(2.0, (double)dif1) - 1;
+    }
+  }
+  else
+  {
+    int hash_val1 = hashAttr(index_key, depth1);
+    int hash_val2 = hashAttr(index_key, depth2);
+    // printf("HERE: %d %d\n", hash_val1, hash_val2);
+
+    SecEntry entry1;
+    CALL_OR_DIE(getSecEntry(fd1, block1, hash_val1 + 2, &entry1));
+
+    SecEntry entry2;
+    CALL_OR_DIE(getSecEntry(fd2, block2, hash_val2 + 2, &entry2));
+    for (int i = 0; i < entry1.secHeader.size; i++)
+    {
+      for (int j = 0; j < entry2.secHeader.size; j++)
+      {
+        if ((strcmp(entry1.secRecord[i].index_key, index_key) == 0) && (strcmp(index_key, entry2.secRecord[j].index_key) == 0))
+        {
+          int block_num1 = getBlockNumFromTID(entry1.secRecord[j].tupleId);
+          int index_in_block1 = getIndexFromTID(entry1.secRecord[j].tupleId);
+          int block_num2 = getBlockNumFromTID(entry2.secRecord[j].tupleId);
+          int index_in_block2 = getIndexFromTID(entry2.secRecord[j].tupleId);
+
+          Entry pentry1;
+          Entry pentry2;
+          CALL_OR_DIE(getEntry(pfd1, block3, block_num1, &pentry1));
+          CALL_OR_DIE(getEntry(pfd2, block4, block_num2, &pentry2));
+
+          // check record types of secondary directories in order to adjust prints
+          if (strcmp(hashEntry1.secHeader.attribute, "surnames") == 0)
+          {
+            printf("%s, %d, %s, %s, ", entry1.secRecord[j].index_key, entry1.secRecord[j].tupleId, pentry1.record->name, pentry1.record->city);
+            printf("%d, %s, %s\n", entry2.secRecord[j].tupleId, pentry2.record->name, pentry2.record->city);
+          }
+          else
+          {
+            printf("%s, %d, %s, %s, ", entry1.secRecord[j].index_key, entry1.secRecord[j].tupleId, pentry1.record->name, pentry1.record->surname);
+            printf("%d, %s, %s\n", entry2.secRecord[j].tupleId, pentry2.record->name, pentry2.record->surname);
+          }
+        }
+      }
+    }
+  }
   return HT_OK;
 }
-
