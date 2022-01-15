@@ -79,9 +79,11 @@ int main(int argc, char **argv)
   srand(12569874);
   UpdateRecordArray update[MAX_RECORDS];
   int r1, r2, r3;
+  int sum = 0;
   printf("Insert Entries\n");
   for (int id = 0; id < atoi(argv[1]); ++id)
   {
+    printf("id = %i\n", id);
     tid tupleId;
 
     // create a record
