@@ -25,17 +25,11 @@ typedef struct
 	int oldTupleId; // η παλια θέση της εγγραφής πριν την εισαγωγή της νέας
 	int newTupleId; // η νέα θέση της εγγραφής που μετακινήθηκε μετα την εισαγωγή της νέας εγγραφής
 
-	// int old_block_num;
-	// int old_index;
-	// int new_block_num;
-	
 } UpdateRecordArray;
 
 tid getTid(int, int);
 
 #endif // HASH_FILE_H
-
-// typedef int tid;
 
 typedef struct
 {
@@ -45,13 +39,12 @@ typedef struct
 
 typedef struct
 {
-  int size;
-  int local_depth;
+	int size;
+	int local_depth;
 } SecHeader;
 
 #define SEC_MAX_NODES ((BF_BLOCK_SIZE - sizeof(SecHashHeader)) / sizeof(SecHashNode))
 #define SEC_MAX_RECORDS ((BF_BLOCK_SIZE - sizeof(SecHeader)) / sizeof(SecondaryRecord))
-
 
 //////////////////////////////////////////////////////////////////////////
 
@@ -92,4 +85,4 @@ HT_ErrorCode SHT_InnerJoin(
 void testing(char *, char *, int);
 void SHT_PrintSecHashTable(int fd, BF_Block *block, int full);
 
-unsigned int hashAttr(const char* str,int depth);
+unsigned int hashAttr(const char *str, int depth);

@@ -6,18 +6,12 @@
 
 typedef int tid;
 
-tid getTid(int, int);
-
 typedef struct
 { //μπορειτε να αλλαξετε τη δομη συμφωνα  με τις ανάγκες σας
 	char surname[20];
 	char city[20];
 	int oldTupleId; // η παλια θέση της εγγραφής πριν την εισαγωγή της νέας
 	int newTupleId; // η νέα θέση της εγγραφής που μετακινήθηκε μετα την εισαγωγή της νέας εγγραφής
-
-	// int old_block_num;
-	// int old_index;
-	// int new_block_num;
 
 } UpdateRecordArray;
 
@@ -134,13 +128,19 @@ HT_ErrorCode HT_PrintAllEntries(
 HT_ErrorCode HashStatistics(
 	char *filename);
 
+// Utility functions
 unsigned int hashFunction(int, int);
+
+tid getTid(int, int);
+
 HT_ErrorCode getNewBlock(int, BF_Block *, int *);
 HT_ErrorCode getDepth(int, BF_Block *, int *);
 HT_ErrorCode setDepth(int, BF_Block *, int);
+HT_ErrorCode getEntry(int, BF_Block *, int, Entry *);
+
 int getBlockNumFromTID(tid);
 int getIndexFromTID(tid);
+
 void printUpdateArray(UpdateRecordArray *array);
-HT_ErrorCode getEntry(int, BF_Block *, int, Entry *);
 
 #endif // HASH_FILE_H

@@ -181,7 +181,6 @@ HT_ErrorCode HT_CreateIndex(const char *filename, int depth)
 {
   CALL_OR_DIE(checkCreateIndex(filename, depth));
   CALL_BF(BF_CreateFile(filename));
-  // printf("Name given : %s, max depth : %i\n", filename, depth);
 
   // initialize block
   BF_Block *block;
@@ -199,7 +198,6 @@ HT_ErrorCode HT_CreateIndex(const char *filename, int depth)
 
   // destroy block
   BF_Block_Destroy(&block);
-  // printf("File was not created before\n");
   HT_CloseFile(id);
 
   return HT_OK;
@@ -582,7 +580,6 @@ HT_ErrorCode splitHashTable(int fd, BF_Block *block, int depth, int bucket, Reco
 
 HT_ErrorCode HT_InsertEntry(int indexDesc, Record record, tid *tupleId, UpdateRecordArray *updateArray)
 {
-  // updateArray[0].oldTupleId=-1;
   for (int i = 0; i < MAX_RECORDS; i++)
   {
     updateArray[i].oldTupleId = -1;
@@ -642,7 +639,6 @@ HT_ErrorCode HT_InsertEntry(int indexDesc, Record record, tid *tupleId, UpdateRe
   // insert new record (whithout splitting)
   entry.record[entry.header.size] = record;
   *tupleId = getTid(blockN, entry.header.size);
-  // printf("block_num = %i, index = %i, tid = %i\n", blockN, entry.header.size, *tupleId);
   (entry.header.size)++;
 
   CALL_OR_DIE(setEntry(fd, block, blockN, &entry));

@@ -6,10 +6,10 @@
 #include "hash_file.h"
 #include "sht_file.h"
 
-#define RECORDS_NUM 10 // you can change it if you want
-#define GLOBAL_DEPT 2  // you can change it if you want
-#define PRIME_FILE_NAME "primary.db"
-#define FILE_NAME "secondary.db"
+#define RECORDS_NUM 10               // you can change it if you want (set in maximum records for seed)
+#define GLOBAL_DEPT 2                // you can change it if you want
+#define PRIME_FILE_NAME "primary.db" // name of primary index file
+#define FILE_NAME "secondary.db"     // name of secondary index file
 
 const char *names[] = {
     "Yannis",
@@ -61,7 +61,7 @@ const char *cities[] = {
     }                         \
   }
 
-int main(int argc, char **argv)
+int main(void)
 {
   BF_Init(LRU);
   int indexDesc;
@@ -81,10 +81,10 @@ int main(int argc, char **argv)
   UpdateRecordArray update[MAX_RECORDS];
   int r1, r2, r3;
   int sum = 0;
-  printf("Insert Entries\n");
-  for (int id = 0; id < atoi(argv[1]); ++id)
+
+  // insert entries
+  for (int id = 0; id < RECORDS_NUM; ++id)
   {
-    printf("id = %i\n", id);
     tid tupleId;
 
     // create a record
@@ -97,22 +97,23 @@ int main(int argc, char **argv)
     memcpy(record.city, cities[r3], strlen(cities[r3]) + 1);
 
     CALL_OR_DIE(HT_InsertEntry(indexDesc, record, &tupleId, update));
-    printf("%s %s %s\n", names[r1], surnames[r2], cities[r3]);
 
     // create a record
     secr.tupleId = tupleId;
     memcpy(secr.index_key, cities[r3], strlen(cities[r3]) + 1);
-    printUpdateArray(update);
-
-    if (id == (atoi(argv[1]) - 2))
-      SHT_PrintAllEntries(sindexDesc, "cities");
 
     CALL_OR_DIE(SHT_SecondaryInsertEntry(sindexDesc, secr));
     CALL_OR_DIE(SHT_SecondaryUpdateEntry(sindexDesc, update));
   }
 
+  printf("---------------------------------\n");
+  printf("PrintAllEntries for Athens:\n");
+  CALL_OR_DIE(SHT_PrintAllEntries(indexDesc, "Athens"));
+  printf("---------------------------------\n");
+  printf("PrintAllEntries for NULL:\n");
   CALL_OR_DIE(SHT_PrintAllEntries(indexDesc, NULL));
-  // SHT_CloseSecondaryIndex(sindexDesc);
+  printf("---------------------------------\n");
+  printf("Printing HashStatistics:\n");
   CALL_OR_DIE(SHT_HashStatistics(FILE_NAME));
 
   printf("---------------------------------\n");
