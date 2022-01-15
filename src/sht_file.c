@@ -893,7 +893,7 @@ HT_ErrorCode SHT_HashStatistics(char *filename)
 
 HT_ErrorCode SHT_InnerJoin(int sindexDesc1, int sindexDesc2, char *index_key)
 {
-  printf("This is InnerJoin! I recieved %d, %d and %s.\n", sindexDesc1, sindexDesc2, index_key);
+  // printf("This is InnerJoin! I recieved %d, %d and %s.\n", sindexDesc1, sindexDesc2, index_key);
 
   // initialize blocks
   BF_Block *block1;
@@ -952,8 +952,8 @@ HT_ErrorCode SHT_InnerJoin(int sindexDesc1, int sindexDesc2, char *index_key)
             {
               int block_num1 = getBlockNumFromTID(entry1.secRecord[j].tupleId);
               int index_in_block1 = getIndexFromTID(entry1.secRecord[j].tupleId);
-              int block_num2 = getBlockNumFromTID(entry2.secRecord[j].tupleId);
-              int index_in_block2 = getIndexFromTID(entry2.secRecord[j].tupleId);
+              int block_num2 = getBlockNumFromTID(entry2.secRecord[w].tupleId);
+              int index_in_block2 = getIndexFromTID(entry2.secRecord[w].tupleId);
 
               Entry pentry1;
               Entry pentry2;
@@ -962,13 +962,13 @@ HT_ErrorCode SHT_InnerJoin(int sindexDesc1, int sindexDesc2, char *index_key)
 
               if (strcmp(hashEntry1.secHeader.attribute, "surnames") == 0)
               {
-                printf("%s, %d, %s, %s, ", entry1.secRecord[j].index_key, entry1.secRecord[j].tupleId, pentry1.record->name, pentry1.record->city);
-                printf("%d, %s, %s\n", entry2.secRecord[j].tupleId, pentry2.record->name, pentry2.record->city);
+                printf("%s, %d, %s, %s, ", entry1.secRecord[j].index_key, entry1.secRecord[j].tupleId, pentry1.record[index_in_block1].name, pentry1.record[index_in_block1].city);
+                printf("%d, %s, %s\n", entry2.secRecord[w].tupleId, pentry2.record[index_in_block2].name, pentry2.record[index_in_block2].city);
               }
               else
               {
-                printf("%s, %d, %s, %s, ", entry1.secRecord[j].index_key, entry1.secRecord[j].tupleId, pentry1.record->name, pentry1.record->surname);
-                printf("%d, %s, %s\n", entry2.secRecord[j].tupleId, pentry2.record->name, pentry2.record->surname);
+                printf("%s, %d, %s, %s, ", entry1.secRecord[j].index_key, entry1.secRecord[j].tupleId, pentry1.record[index_in_block1].name, pentry1.record[index_in_block1].surname);
+                printf("%d, %s, %s\n", entry2.secRecord[w].tupleId, pentry2.record[index_in_block2].name, pentry2.record[index_in_block2].surname);
               }
             }
           }
@@ -999,8 +999,8 @@ HT_ErrorCode SHT_InnerJoin(int sindexDesc1, int sindexDesc2, char *index_key)
       {
         if ((strcmp(entry1.secRecord[i].index_key, index_key) == 0) && (strcmp(index_key, entry2.secRecord[j].index_key) == 0))
         {
-          int block_num1 = getBlockNumFromTID(entry1.secRecord[j].tupleId);
-          int index_in_block1 = getIndexFromTID(entry1.secRecord[j].tupleId);
+          int block_num1 = getBlockNumFromTID(entry1.secRecord[i].tupleId);
+          int index_in_block1 = getIndexFromTID(entry1.secRecord[i].tupleId);
           int block_num2 = getBlockNumFromTID(entry2.secRecord[j].tupleId);
           int index_in_block2 = getIndexFromTID(entry2.secRecord[j].tupleId);
 
@@ -1012,13 +1012,13 @@ HT_ErrorCode SHT_InnerJoin(int sindexDesc1, int sindexDesc2, char *index_key)
           // check record types of secondary directories in order to adjust prints
           if (strcmp(hashEntry1.secHeader.attribute, "surnames") == 0)
           {
-            printf("%s, %d, %s, %s, ", entry1.secRecord[j].index_key, entry1.secRecord[j].tupleId, pentry1.record->name, pentry1.record->city);
-            printf("%d, %s, %s\n", entry2.secRecord[j].tupleId, pentry2.record->name, pentry2.record->city);
+            printf("%s, %d, %s, %s, ", entry1.secRecord[i].index_key, entry1.secRecord[i].tupleId, pentry1.record[index_in_block1].name, pentry1.record[index_in_block1].city);
+            printf("%d, %s, %s\n", entry2.secRecord[j].tupleId, pentry2.record[index_in_block2].name, pentry2.record[index_in_block2].city);
           }
           else
           {
-            printf("%s, %d, %s, %s, ", entry1.secRecord[j].index_key, entry1.secRecord[j].tupleId, pentry1.record->name, pentry1.record->surname);
-            printf("%d, %s, %s\n", entry2.secRecord[j].tupleId, pentry2.record->name, pentry2.record->surname);
+            printf("%s, %d, %s, %s, ", entry1.secRecord[i].index_key, entry1.secRecord[i].tupleId, pentry1.record[index_in_block1].name, pentry1.record[index_in_block1].surname);
+            printf("%d, %s, %s\n", entry2.secRecord[j].tupleId, pentry2.record[index_in_block2].name, pentry2.record[index_in_block2].surname);
           }
         }
       }

@@ -70,7 +70,7 @@ int main(int argc, char **argv)
   CALL_OR_DIE(HT_OpenIndex("primary.db", &indexDesc));
 
   CALL_OR_DIE(SHT_Init());
-  CALL_OR_DIE(SHT_CreateSecondaryIndex(FILE_NAME, "surnames", strlen("surnames"), GLOBAL_DEPT, "primary.db"));
+  CALL_OR_DIE(SHT_CreateSecondaryIndex(FILE_NAME, "cities", strlen("cities"), GLOBAL_DEPT, "primary.db"));
   int sindexDesc;
   CALL_OR_DIE(SHT_OpenSecondaryIndex(FILE_NAME, &sindexDesc));
 
@@ -94,13 +94,17 @@ int main(int argc, char **argv)
     memcpy(record.surname, surnames[r2], strlen(surnames[r2]) + 1);
     r3 = rand() % 10;
     memcpy(record.city, cities[r3], strlen(cities[r3]) + 1);
-    
+
     CALL_OR_DIE(HT_InsertEntry(indexDesc, record, &tupleId, update));
+    printf("%s %s %s\n", names[r1], surnames[r2], cities[r3]);
 
     // create a record
     secr.tupleId = tupleId;
-    memcpy(secr.index_key, surnames[r2], strlen(surnames[r2]) + 1);
-    // printUpdateArray(update);
+    memcpy(secr.index_key, cities[r3], strlen(cities[r3]) + 1);
+    printUpdateArray(update);
+
+    if (id == (atoi(argv[1]) - 2))
+      SHT_PrintAllEntries(sindexDesc, "cities");
 
     CALL_OR_DIE(SHT_SecondaryInsertEntry(sindexDesc, secr));
     CALL_OR_DIE(SHT_SecondaryUpdateEntry(sindexDesc, update));
@@ -110,6 +114,11 @@ int main(int argc, char **argv)
   // SHT_CloseSecondaryIndex(sindexDesc);
   CALL_OR_DIE(SHT_HashStatistics("secondary.db"));
 
+  CALL_OR_DIE(SHT_HashStatistics("secondary.db"));
+
+  printf("---------------------------------\n");
+  printf("Inner join on Athens:\n");
+  CALL_OR_DIE(SHT_InnerJoin(sindexDesc, sindexDesc, "Athens"));
   printf("---------------------------------\n");
   // CALL_OR_DIE(SHT_InnerJoin(sindexDesc, sindexDesc, "Gaitanis"));
   SHT_CloseSecondaryIndex(sindexDesc);
