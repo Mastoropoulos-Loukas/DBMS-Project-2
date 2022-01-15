@@ -8,6 +8,7 @@
 
 #define RECORDS_NUM 10 // you can change it if you want
 #define GLOBAL_DEPT 2  // you can change it if you want
+#define PRIME_FILE_NAME "primary.db"
 #define FILE_NAME "secondary.db"
 
 const char *names[] = {
@@ -66,11 +67,11 @@ int main(int argc, char **argv)
   int indexDesc;
 
   CALL_OR_DIE(HT_Init());
-  CALL_OR_DIE(HT_CreateIndex("primary.db", GLOBAL_DEPT));
-  CALL_OR_DIE(HT_OpenIndex("primary.db", &indexDesc));
+  CALL_OR_DIE(HT_CreateIndex(PRIME_FILE_NAME, GLOBAL_DEPT));
+  CALL_OR_DIE(HT_OpenIndex(PRIME_FILE_NAME, &indexDesc));
 
   CALL_OR_DIE(SHT_Init());
-  CALL_OR_DIE(SHT_CreateSecondaryIndex(FILE_NAME, "cities", strlen("cities"), GLOBAL_DEPT, "primary.db"));
+  CALL_OR_DIE(SHT_CreateSecondaryIndex(FILE_NAME, "cities", strlen("cities"), GLOBAL_DEPT, PRIME_FILE_NAME));
   int sindexDesc;
   CALL_OR_DIE(SHT_OpenSecondaryIndex(FILE_NAME, &sindexDesc));
 
@@ -109,19 +110,19 @@ int main(int argc, char **argv)
     CALL_OR_DIE(SHT_SecondaryInsertEntry(sindexDesc, secr));
     CALL_OR_DIE(SHT_SecondaryUpdateEntry(sindexDesc, update));
   }
-  
+
   CALL_OR_DIE(SHT_PrintAllEntries(indexDesc, NULL));
   // SHT_CloseSecondaryIndex(sindexDesc);
-  CALL_OR_DIE(SHT_HashStatistics("secondary.db"));
-
-  CALL_OR_DIE(SHT_HashStatistics("secondary.db"));
+  CALL_OR_DIE(SHT_HashStatistics(FILE_NAME));
 
   printf("---------------------------------\n");
   printf("Inner join on Athens:\n");
   CALL_OR_DIE(SHT_InnerJoin(sindexDesc, sindexDesc, "Athens"));
   printf("---------------------------------\n");
-  // CALL_OR_DIE(SHT_InnerJoin(sindexDesc, sindexDesc, "Gaitanis"));
-  SHT_CloseSecondaryIndex(sindexDesc);
+  printf("Inner join on NULL:\n");
+  CALL_OR_DIE(SHT_InnerJoin(sindexDesc, sindexDesc, NULL));
+  printf("---------------------------------\n");
+  CALL_OR_DIE(SHT_CloseSecondaryIndex(sindexDesc));
 
   CALL_OR_DIE(HT_CloseFile(indexDesc));
   BF_Close();

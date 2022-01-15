@@ -530,20 +530,21 @@ HT_ErrorCode splitSecHashTable(int fd, BF_Block *block, int depth, int bucket, S
   CALL_OR_DIE(setSecHashTable(fd, block, 1, &hashEntry));
   CALL_OR_DIE(reassignSecRecords(fd, block, entry, bucket, blockNew, half, depth, &old, &new));
 
-  if(new.secHeader.size == 0){
+  if (new.secHeader.size == 0)
+  {
     printf("Reassign Records Error! No secRecords assigned to new\n");
     CALL_OR_DIE(setSecEntry(fd, block, bucket, &old));
     CALL_OR_DIE(setSecEntry(fd, block, blockNew, &new));
     return 2;
   }
-  
-  if(old.secHeader.size == 0){
+
+  if (old.secHeader.size == 0)
+  {
     printf("Reassign Records Error! No secRecords assigned to old\n");
     CALL_OR_DIE(setSecEntry(fd, block, bucket, &old));
     CALL_OR_DIE(setSecEntry(fd, block, blockNew, &new));
     return 2;
   }
-  
 
   // insert new record (after splitting)
   CALL_OR_DIE(insertSecRecordAfterSplit(record, depth, half, bucket, blockNew, &old, &new));
@@ -601,7 +602,8 @@ HT_ErrorCode SHT_SecondaryInsertEntry(int indexDesc, SecondaryRecord record)
     }
     // spit hashTable's pointers
     int res = splitSecHashTable(fd, block, depth, blockN, record, entry);
-    if(res == 2)return SHT_SecondaryInsertEntry(indexDesc, record);
+    if (res == 2)
+      return SHT_SecondaryInsertEntry(indexDesc, record);
     return HT_OK;
   }
 
@@ -784,7 +786,7 @@ HT_ErrorCode printAllSecRecords(int fd, BF_Block *block, int depth, SecHashEntry
   return HT_OK;
 }
 
-HT_ErrorCode printSecSepcificRecord(int fd, BF_Block *block, char* id, int depth, SecHashEntry hashEntry)
+HT_ErrorCode printSecSepcificRecord(int fd, BF_Block *block, char *id, int depth, SecHashEntry hashEntry)
 {
   int value = hashAttr(id, depth);
   int blockN = getSecBucket(value, hashEntry);
@@ -823,8 +825,9 @@ HT_ErrorCode SHT_PrintAllEntries(int sindexDesc, char *index_key)
 
   HT_ErrorCode htCode;
   if (index_key == NULL)
-  htCode = printAllSecRecords(fd, block, depth, hashEntry);
-  else htCode = printSecSepcificRecord(fd, block, index_key, depth, hashEntry);
+    htCode = printAllSecRecords(fd, block, depth, hashEntry);
+  else
+    htCode = printSecSepcificRecord(fd, block, index_key, depth, hashEntry);
 
   BF_Block_Destroy(&block);
   return htCode;
@@ -862,9 +865,11 @@ HT_ErrorCode SHT_HashStatistics(char *filename)
   int sum = 0;
   for (int i = 0; i < iter; i++)
   {
-    sum ++;
-    if(sum-1 < i)sum = i + 1;
-    if(sum == iter)break;
+    sum++;
+    if (sum - 1 < i)
+      sum = i + 1;
+    if (sum == iter)
+      break;
     int blockN = hashEntry.secHashNode[i].block_num;
     SecEntry entry;
     CALL_OR_DIE(getSecEntry(fd, block, blockN, &entry));
@@ -987,12 +992,15 @@ HT_ErrorCode SHT_InnerJoin(int sindexDesc1, int sindexDesc2, char *index_key)
     int hash_val1 = hashAttr(index_key, depth1);
     int hash_val2 = hashAttr(index_key, depth2);
     // printf("HERE: %d %d\n", hash_val1, hash_val2);
+    int bn1 = hashEntry1.secHashNode[hash_val1].block_num;
+    int bn2 = hashEntry2.secHashNode[hash_val2].block_num;
 
     SecEntry entry1;
-    CALL_OR_DIE(getSecEntry(fd1, block1, hash_val1 + 2, &entry1));
+    CALL_OR_DIE(getSecEntry(fd1, block1, bn1, &entry1));
 
     SecEntry entry2;
-    CALL_OR_DIE(getSecEntry(fd2, block2, hash_val2 + 2, &entry2));
+    CALL_OR_DIE(getSecEntry(fd2, block2, bn2, &entry2));
+
     for (int i = 0; i < entry1.secHeader.size; i++)
     {
       for (int j = 0; j < entry2.secHeader.size; j++)
