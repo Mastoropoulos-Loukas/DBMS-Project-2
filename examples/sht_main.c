@@ -83,6 +83,7 @@ int main(int argc, char **argv)
   printf("Insert Entries\n");
   for (int id = 0; id < atoi(argv[1]); ++id)
   {
+    printf("id = %i\n", id);
     tid tupleId;
 
     // create a record
@@ -99,21 +100,18 @@ int main(int argc, char **argv)
     // create a record
     secr.tupleId = tupleId;
     memcpy(secr.index_key, surnames[r2], strlen(surnames[r2]) + 1);
-    printUpdateArray(update);
-
-    // if (id == (atoi(argv[1]) - 2))
-    //   SHT_PrintAllEntries(sindexDesc, "surnames");
+    // printUpdateArray(update);
 
     CALL_OR_DIE(SHT_SecondaryInsertEntry(sindexDesc, secr));
     CALL_OR_DIE(SHT_SecondaryUpdateEntry(sindexDesc, update));
   }
 
-  // CALL_OR_DIE(HT_PrintAllEntries(indexDesc, NULL));
-  CALL_OR_DIE(SHT_PrintAllEntries(sindexDesc, "Michas"));
-  CALL_OR_DIE(SHT_HashStatistics("secondary.db"));
+  CALL_OR_DIE(HT_PrintAllEntries(indexDesc, NULL));
+  // CALL_OR_DIE(SHT_PrintAllEntries(sindexDesc, "Michas"));
+  // CALL_OR_DIE(SHT_HashStatistics("secondary.db"));
 
   printf("---------------------------------\n");
-  CALL_OR_DIE(SHT_InnerJoin(sindexDesc, sindexDesc, "Gaitanis"));
+  // CALL_OR_DIE(SHT_InnerJoin(sindexDesc, sindexDesc, "Gaitanis"));
 
   CALL_OR_DIE(HT_CloseFile(indexDesc));
   CALL_OR_DIE(SHT_CloseSecondaryIndex(sindexDesc));
