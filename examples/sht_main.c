@@ -79,6 +79,7 @@ int main(int argc, char **argv)
   srand(12569874);
   UpdateRecordArray update[MAX_RECORDS];
   int r1, r2, r3;
+  int sum = 0;
   printf("Insert Entries\n");
   for (int id = 0; id < atoi(argv[1]); ++id)
   {
@@ -92,7 +93,7 @@ int main(int argc, char **argv)
     memcpy(record.surname, surnames[r2], strlen(surnames[r2]) + 1);
     r3 = rand() % 10;
     memcpy(record.city, cities[r3], strlen(cities[r3]) + 1);
-
+    
     CALL_OR_DIE(HT_InsertEntry(indexDesc, record, &tupleId, update));
 
     // create a record
@@ -100,17 +101,15 @@ int main(int argc, char **argv)
     memcpy(secr.index_key, surnames[r2], strlen(surnames[r2]) + 1);
     printUpdateArray(update);
 
-    if (id == (atoi(argv[1]) - 2))
-      SHT_PrintAllEntries(sindexDesc, "surnames");
+    // if (id == (atoi(argv[1]) - 2))
+    //   SHT_PrintAllEntries(sindexDesc, "surnames");
 
     CALL_OR_DIE(SHT_SecondaryInsertEntry(sindexDesc, secr));
     CALL_OR_DIE(SHT_SecondaryUpdateEntry(sindexDesc, update));
   }
 
   // CALL_OR_DIE(HT_PrintAllEntries(indexDesc, NULL));
-  printf("\n\n");
-  CALL_OR_DIE(SHT_PrintAllEntries(sindexDesc, "surnames"));
-
+  CALL_OR_DIE(SHT_PrintAllEntries(sindexDesc, "Michas"));
   CALL_OR_DIE(SHT_HashStatistics("secondary.db"));
 
   printf("---------------------------------\n");

@@ -768,6 +768,28 @@ HT_ErrorCode printAllSecRecords(int fd, BF_Block *block, int depth, SecHashEntry
   return HT_OK;
 }
 
+HT_ErrorCode printSecSepcificRecord(int fd, BF_Block *block, char* id, int depth, SecHashEntry hashEntry)
+{
+  int value = hashAttr(id, depth);
+  int blockN = getSecBucket(value, hashEntry);
+
+  // check if block was allocated
+  if (blockN == 0)
+  {
+    printf("Block was not allocated\n");
+    return HT_ERROR;
+  }
+
+  // print record with that id
+  SecEntry entry;
+  CALL_OR_DIE(getSecEntry(fd, block, blockN, &entry));
+  for (int i = 0; i < entry.secHeader.size; i++)
+    if (strcmp(entry.secRecord[i].index_key, id) == 0)
+      printSecRecord(entry.secRecord[i]);
+
+  return HT_OK;
+}
+
 HT_ErrorCode SHT_PrintAllEntries(int sindexDesc, char *index_key)
 {
   BF_Block *block;
@@ -784,9 +806,9 @@ HT_ErrorCode SHT_PrintAllEntries(int sindexDesc, char *index_key)
   CALL_OR_DIE(getSecHashTable(fd, block, 1, &hashEntry));
 
   HT_ErrorCode htCode;
-  // if (id == NULL)
+  if (index_key == NULL)
   htCode = printAllSecRecords(fd, block, depth, hashEntry);
-  // else htCode = printSepcificRecord(fd, block, (*id), depth, hashEntry);
+  else htCode = printSecSepcificRecord(fd, block, index_key, depth, hashEntry);
 
   BF_Block_Destroy(&block);
   return htCode;
