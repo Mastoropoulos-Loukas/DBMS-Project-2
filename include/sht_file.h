@@ -82,7 +82,6 @@ HT_ErrorCode SHT_InnerJoin(
 	int sindexDesc2, /* θέση στον πίνακα με τα ανοιχτά αρχεία του αρχείου δευτερεύοντος ευρετηρίου για το δεύτερο αρχείο εισόδου */
 	char *index_key /* το κλειδι πανω στο οποιο θα γινει το join. Αν  NULL τοτε επιστρέφεί όλες τις πλειάδες*/);
 
-void testing(char *, char *, int);
 void SHT_PrintSecHashTable(int fd, BF_Block *block, int full);
 
 unsigned int hashAttr(const char *str, int depth);
