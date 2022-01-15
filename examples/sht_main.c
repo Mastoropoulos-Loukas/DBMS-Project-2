@@ -105,15 +105,15 @@ int main(int argc, char **argv)
     CALL_OR_DIE(SHT_SecondaryInsertEntry(sindexDesc, secr));
     CALL_OR_DIE(SHT_SecondaryUpdateEntry(sindexDesc, update));
   }
-
-  CALL_OR_DIE(HT_PrintAllEntries(indexDesc, NULL));
-  // CALL_OR_DIE(SHT_PrintAllEntries(sindexDesc, "Michas"));
-  // CALL_OR_DIE(SHT_HashStatistics("secondary.db"));
+  
+  CALL_OR_DIE(SHT_PrintAllEntries(indexDesc, NULL));
+  // SHT_CloseSecondaryIndex(sindexDesc);
+  CALL_OR_DIE(SHT_HashStatistics("secondary.db"));
 
   printf("---------------------------------\n");
   // CALL_OR_DIE(SHT_InnerJoin(sindexDesc, sindexDesc, "Gaitanis"));
+  SHT_CloseSecondaryIndex(sindexDesc);
 
   CALL_OR_DIE(HT_CloseFile(indexDesc));
-  CALL_OR_DIE(SHT_CloseSecondaryIndex(sindexDesc));
   BF_Close();
 }

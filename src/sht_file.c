@@ -530,6 +530,21 @@ HT_ErrorCode splitSecHashTable(int fd, BF_Block *block, int depth, int bucket, S
   CALL_OR_DIE(setSecHashTable(fd, block, 1, &hashEntry));
   CALL_OR_DIE(reassignSecRecords(fd, block, entry, bucket, blockNew, half, depth, &old, &new));
 
+  if(new.secHeader.size == 0){
+    printf("Reassign Records Error! No secRecords assigned to new\n");
+    CALL_OR_DIE(setSecEntry(fd, block, bucket, &old));
+    CALL_OR_DIE(setSecEntry(fd, block, blockNew, &new));
+    return 2;
+  }
+  
+  if(old.secHeader.size == 0){
+    printf("Reassign Records Error! No secRecords assigned to old\n");
+    CALL_OR_DIE(setSecEntry(fd, block, bucket, &old));
+    CALL_OR_DIE(setSecEntry(fd, block, blockNew, &new));
+    return 2;
+  }
+  
+
   // insert new record (after splitting)
   CALL_OR_DIE(insertSecRecordAfterSplit(record, depth, half, bucket, blockNew, &old, &new));
 
@@ -585,7 +600,8 @@ HT_ErrorCode SHT_SecondaryInsertEntry(int indexDesc, SecondaryRecord record)
       CALL_OR_DIE(setDepth(fd, block, depth));
     }
     // spit hashTable's pointers
-    CALL_OR_DIE(splitSecHashTable(fd, block, depth, blockN, record, entry));
+    int res = splitSecHashTable(fd, block, depth, blockN, record, entry);
+    if(res == 2)return SHT_SecondaryInsertEntry(indexDesc, record);
     return HT_OK;
   }
 
@@ -843,9 +859,12 @@ HT_ErrorCode SHT_HashStatistics(char *filename)
   max = total = 0;
   min = -1;
 
+  int sum = 0;
   for (int i = 0; i < iter; i++)
   {
-
+    sum ++;
+    if(sum-1 < i)sum = i + 1;
+    if(sum == iter)break;
     int blockN = hashEntry.secHashNode[i].block_num;
     SecEntry entry;
     CALL_OR_DIE(getSecEntry(fd, block, blockN, &entry));
@@ -866,7 +885,6 @@ HT_ErrorCode SHT_HashStatistics(char *filename)
   printf("Min number of records in bucket is %i\n", min);
   printf("Mean number of records in bucket is %f\n", (double)total / (double)dataN);
 
-  BF_UnpinBlock(block);
   BF_Block_Destroy(&block);
   SHT_CloseSecondaryIndex(id);
 
