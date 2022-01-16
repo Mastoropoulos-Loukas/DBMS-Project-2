@@ -20,9 +20,18 @@
 ## Βοηθητικές συναρτήσεις ανά αρχείο
 * __hash_file.c__:
     * checkCreateIndex
+        * Συνάρτηση που ελέγχει για την σωστή κλήση της HT_CreateIndex
+
     * checkInsertEntry
+        * Συνάρτηση που ελέγχει για την σωστή κλήση της HT_InsertEntry
+
     * checkPrintAllEntries
+        * Συνάρτηση που ελέγχει για την σωστή κλήση της HT_PrintAllEntries
+
     * getTid
+        * Συνάρτηση που υπολογίζει το tupleID μιας εγγραφής με βάση τον τύπο της εκφώνησης
+        (tupleId= (blockId+1) *num_of_rec_in_block)+index_of_rec_in_block)
+
     * getDepth
     * getHashTable
     * getBucket
@@ -112,8 +121,8 @@
 * SHT_CloseSecondaryIndex
 * SHT_SecondaryInsertEntry
 * SHT_SecondaryUpdateEntry
-    
-    * Για να λειτουργήσει σωστα, πρέπει να γνωρίζουμε απο πριν το μέγεθος του updateArray. Στην δική μας περίπτωση το μέγεθος αυτό είναι MAX_RECORDS. Αν το oldTupleID του 1ου στοιχείου του updateArray είναι ίσο με -1 , σημαίνει πως δεν χρειάζεται να κάνουμε καμία ενήμερωση στις εγγραφές. Η αρχικοποίση του updateArray συμβαίνει στην HT_InsertEntry, όπως και η ενημέρωσή του. 
+    * Για να λειτουργήσει σωστα, πρέπει να γνωρίζουμε απο πριν το μέγεθος του updateArray. Στην δική μας περίπτωση το μέγεθος αυτό είναι MAX_RECORDS. Αν το oldTupleID του 1ου στοιχείου του updateArray είναι ίσο με -1 , σημαίνει πως δεν χρειάζεται να κάνουμε καμία ενήμερωση στις εγγραφές. Η αρχικοποίση του updateArray συμβαίνει στην HT_InsertEntry, όπως και η ενημέρωσή του.
+
 * SHT_PrintAllEntries
 * SHT_HashStatistics
 * SHT_InnerJoin
